@@ -191,10 +191,9 @@ def plot_wins(win_easy, win_med, win_hard):
     plt.plot(x, win_med, color = "gray")
     plt.plot(x, win_hard, color = "lightcoral")
     plt.ylim([0, 100])
-    file = r"C:\Users\tedjt\Desktop\OIST\A313\pred_prey"
-    os.chdir(file) 
+    os.chdir(file_1) 
     plt.savefig(folder + "/images/{}.png".format(str(total_length).zfill(5)))
-    os.chdir(r"C:\Users\tedjt")
+    os.chdir(file_2)
     plt.show()
     plt.close()
 
