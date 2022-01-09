@@ -22,9 +22,7 @@ file = r"C:\Users\tedjt\Desktop\pred_prey"
 os.chdir(file) 
 from utils import device, get_free_mem, delete_these
 from arena import rgbd_input, max_angle_change
-from get_memorable import select_memorable_points
 from basics.abstract_algorithms import RecurrentOffPolicyRLAlgorithm
-from basics.actors_and_critics import MLPTanhActor, MLPCritic
 from basics.utils import get_device, create_target, mean_of_unmasked_elements, polyak_update, save_net, load_net
 
 

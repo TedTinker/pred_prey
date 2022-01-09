@@ -14,7 +14,7 @@ import keyboard
 
 file = r"C:\Users\tedjt\Desktop\pred_prey"
 os.chdir(file) 
-from utils import device, get_free_mem, delete_these, duration
+from utils import file_1, file_2, device, get_free_mem, delete_these, duration
 from arena import rgbd_input, too_close
 from pred_prey_env import PredPreyEnv, run_with_GUI
 from rtd3 import RecurrentTD3
@@ -23,30 +23,28 @@ os.chdir(r"C:\Users\tedjt")
 pred = RecurrentTD3()
 prey = RecurrentTD3()
 
-arena = "arena_empty.png"
+arena = "empty_arena.png"
 
 folder = "empty_prey_pinned"
 
 def save_pred_prey(folder = folder, sub = ""):
-    file = r"C:\Users\tedjt\Desktop\pred_prey"
-    os.chdir(file) 
+    os.chdir(file_1) 
     if not os.path.exists(folder):  os.makedirs(folder)
     if not os.path.exists(folder + "/pred"):  os.makedirs(folder + "/pred")
     if not os.path.exists(folder + "/prey"):  os.makedirs(folder + "/prey")
     if not os.path.exists(folder + "/images"):  os.makedirs(folder + "/images")
     torch.save(pred.state_dict(), folder + "/pred/pred{}.pt".format(sub))
     torch.save(prey.state_dict(), folder + "/prey/prey{}.pt".format(sub))
-    os.chdir(r"C:\Users\tedjt")
+    os.chdir(file_2)
 
 save_pred_prey(folder, "_0_epochs")
 
 def load_pred_prey(folder = folder, sub = ""):
-    file = r"C:\Users\tedjt\Desktop\pred_prey"
-    os.chdir(file) 
+    os.chdir(file_1) 
     #os.listdir(file + "\\" + folder + "\pred")
     pred.load_state_dict(torch.load(folder + "/pred/pred{}.pt".format(sub)))
     prey.load_state_dict(torch.load(folder + "/prey/prey{}.pt".format(sub)))
-    os.chdir(r"C:\Users\tedjt")
+    os.chdir(file_2)
     return(pred, prey)
     
 #pred, prey = load_pred_prey("empty_rtd3", "_101_epochs")
