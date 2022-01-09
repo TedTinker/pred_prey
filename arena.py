@@ -64,7 +64,7 @@ if __name__ == "__main__":
 agent_size = .5             # How big are agents?
 image_size = 16             # How big are agent observations?
 rgbd_input = (image_size, image_size, 4)
-max_velocity = 20           # Maximum velocity?
+max_velocity = 30           # Maximum velocity?
 max_velocity_change = 10    # How much can an agent change velocity?
 max_angle_change = pi / 2   # How much can an agent change angle?
 too_close = .6              # How close must the predator be to win?

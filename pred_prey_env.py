@@ -279,7 +279,7 @@ class PredPreyEnv():
             p.removeBody(self.prey, physicsClientId = self.physicsClient)
         if(self.resets == 100 and self.GUI):
             p.disconnect(self.physicsClient)
-            self.physicsClient = get_physics(True) 
+            self.physicsClient = get_physics(True, name = self.arena) 
         if(forever):
             p.disconnect(self.physicsClient)
             indexes.append(self.index)
