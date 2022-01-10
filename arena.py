@@ -12,11 +12,11 @@ from utils import file_2
 
 
 
-def get_arena(arena = "arena.png"):
+def get_arena(arena_name = "arena.png"):
 
     # Get PNG image.
     os.chdir(file_1) 
-    arena = cv2.imread(arena)
+    arena = cv2.imread(arena_name)
     os.chdir(file_2) 
     w,h,_ = arena.shape
     
@@ -43,18 +43,6 @@ def get_arena(arena = "arena.png"):
 
 
 
-if __name__ == "__main__":
-    arena, open_spots, hard_spot_pairs_for_pred, hard_spot_pairs_for_prey, w, h = get_arena(arena = "empty_arena.png")
-    print("\nArena shape:", arena.shape)
-    print("\nOpen spots:")
-    for spot in open_spots:
-        print("\t", spot)
-    print("\nHard spots for pred:")
-    for spots in hard_spot_pairs_for_pred:
-        print("\t", spots)
-    print("\nHard spots for prey:")
-    for spots in hard_spot_pairs_for_prey:
-        print("\t", spots)
 
     
     
@@ -134,3 +122,19 @@ def start_arena(test = False, physicsClient = 0, arena_name = "arena.png", alrea
     
     os.chdir(file_2)
     return(pred, prey, pos_pred, pos_prey, yaw_pred, yaw_prey, speed_pred, speed_prey, wall_ids)
+
+
+
+
+if __name__ == "__main__":
+    arena, open_spots, hard_spot_pairs_for_pred, hard_spot_pairs_for_prey, w, h = get_arena(arena = "empty_arena.png")
+    print("\nArena shape:", arena.shape)
+    print("\nOpen spots:")
+    for spot in open_spots:
+        print("\t", spot)
+    print("\nHard spots for pred:")
+    for spots in hard_spot_pairs_for_pred:
+        print("\t", spots)
+    print("\nHard spots for prey:")
+    for spots in hard_spot_pairs_for_prey:
+        print("\t", spots)

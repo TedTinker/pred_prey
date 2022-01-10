@@ -29,7 +29,7 @@ from copy import deepcopy
 from itertools import product
 
 # How are agents rewarded/punished each step? 
-dist_d      = .1     # Based on distance
+dist_d      = 1     # Based on distance
 closer_d    = 10     # Based on distance closer
 speed_d       = 0     # Based on speed
 step_d      = 0     # Based on how many steps have passed

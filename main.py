@@ -278,5 +278,5 @@ while(e <= 100):
 
 run_with_GUI(test = "pred", pred = pred, prey = prey, 
              pred_condition = None, prey_condition = "still", 
-             GUI = False, episodes = 1, arena_name = arena_name, render = False)
+             GUI = False, episodes = 10, arena_name = arena_name, render = False)
 
