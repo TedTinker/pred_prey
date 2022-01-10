@@ -23,7 +23,7 @@ os.chdir(r"C:\Users\tedjt")
 pred = RecurrentTD3()
 prey = RecurrentTD3()
 
-arena = "empty_arena.png"
+arena_name = "empty_arena.png"
 
 folder = "empty_prey_pinned"
 
@@ -56,7 +56,7 @@ e = 0
 
 from itertools import product
 all_env_params = [_ for _ in product((False, "pred", "prey"), (False, "random", "still"), (False, "random", "still"))]
-env_dict = {(test, pred_condition, prey_condition) : PredPreyEnv(GUI = False, test = test, pred_condition = pred_condition, prey_condition = prey_condition, arena = arena) for test, pred_condition, prey_condition in all_env_params}
+env_dict = {(test, pred_condition, prey_condition) : PredPreyEnv(GUI = False, test = test, pred_condition = pred_condition, prey_condition = prey_condition, arena_name = arena_name) for test, pred_condition, prey_condition in all_env_params}
 
 def add_discount(rewards, last, GAMMA = .9):
     discounts = [last * (GAMMA**i) for i in range(len(rewards))]
@@ -77,38 +77,38 @@ def session(
         train = "both", test = False, 
         pred = pred, prey = prey, 
         pred_condition = False, prey_condition = False, 
-        arena = arena, plotting_rewards = False,
+        arena_name = arena_name, plotting_rewards = False,
         pred_exploration = 0, prey_exploration = 0):
     
-    if(GUI):    env = PredPreyEnv(GUI = True, test = test, pred_condition = pred_condition, prey_condition = prey_condition, arena = arena)
+    if(GUI):    env = PredPreyEnv(GUI = True, test = test, pred_condition = pred_condition, prey_condition = prey_condition, arena_name = arena_name)
     else:       env = env_dict[(test, pred_condition, prey_condition)]
     obs = env.reset()  
     pred.train(), prey.train()
     done = False
     pred_hc, prey_hc  = None, None
-    ang_vel_1, ang_vel_2 = None, None
+    ang_speed_1, ang_speed_2 = None, None
     reward_list = []
     to_push_pred, to_push_prey = [], []
     while(done == False):
         with torch.no_grad():
-            pred_vel_before = env.vel_pred
+            pred_speed_before = env.speed_pred
             pred_energy_before = env.pred_energy
-            prey_vel_before = env.vel_prey
+            prey_speed_before = env.speed_prey
             prey_energy_before = env.prey_energy
 
-            ang_vel_1, new_pred_hc = pred.get_action(obs[0], pred_vel_before, pred_energy_before, ang_vel_1, pred_hc, pred_exploration)
-            ang_vel_2, new_prey_hc = prey.get_action(obs[1], prey_vel_before, prey_energy_before, ang_vel_2, prey_hc, prey_exploration)
+            ang_speed_1, new_pred_hc = pred.get_action(obs[0], pred_speed_before, pred_energy_before, ang_speed_1, pred_hc, pred_exploration)
+            ang_speed_2, new_prey_hc = prey.get_action(obs[1], prey_speed_before, prey_energy_before, ang_speed_2, prey_hc, prey_exploration)
                 
-            new_obs, (r_pred, r_prey), done, dist_after = env.step(ang_vel_1, ang_vel_2)
+            new_obs, (r_pred, r_prey), done, dist_after = env.step(ang_speed_1, ang_speed_2)
                         
             # o, s, e, a, r, no, ns, d, cutoff
             to_push_pred.append(
-                (obs[0].cpu(), torch.tensor(pred_vel_before), torch.tensor(pred_energy_before), ang_vel_1.cpu(), r_pred, 
-                new_obs[0].cpu(), torch.tensor(env.vel_pred), torch.tensor(env.pred_energy), torch.tensor(done).int(), torch.tensor(done)))
+                (obs[0].cpu(), torch.tensor(pred_speed_before), torch.tensor(pred_energy_before), ang_speed_1.cpu(), r_pred, 
+                new_obs[0].cpu(), torch.tensor(env.speed_pred), torch.tensor(env.pred_energy), torch.tensor(done).int(), torch.tensor(done)))
                 
             to_push_prey.append(
-                (obs[1].cpu(), torch.tensor(prey_vel_before), torch.tensor(prey_energy_before), ang_vel_2.cpu(), r_prey, 
-                new_obs[1].cpu(), torch.tensor(env.vel_prey), torch.tensor(env.prey_energy), torch.tensor(done), torch.tensor(done)))
+                (obs[1].cpu(), torch.tensor(prey_speed_before), torch.tensor(prey_energy_before), ang_speed_2.cpu(), r_prey, 
+                new_obs[1].cpu(), torch.tensor(env.speed_prey), torch.tensor(env.prey_energy), torch.tensor(done), torch.tensor(done)))
                 
             reward_list.append((r_pred, r_prey))
             obs = new_obs
@@ -218,21 +218,21 @@ while(e <= 100):
         win, length = session(GUI = keyboard.is_pressed('q'), plotting_rewards = keyboard.is_pressed('q'),
                               train = "pred", test = "prey", 
                               pred = pred, prey = prey,
-                              pred_condition = False, prey_condition = "still", arena = arena,
+                              pred_condition = False, prey_condition = "still", arena_name = arena_name,
                               pred_exploration=explorations[0], prey_exploration=explorations[1])
         easy_list.append(win)
         
         win, length = session(GUI = keyboard.is_pressed('q'), plotting_rewards = keyboard.is_pressed('q'),
                               train = "pred", test = False, 
                               pred = pred, prey = prey, 
-                              pred_condition = False, prey_condition = "still", arena = arena,
+                              pred_condition = False, prey_condition = "still", arena_name = arena_name,
                               pred_exploration=explorations[0], prey_exploration=explorations[1])
         med_list.append(win)
 
         win, length = session(GUI = keyboard.is_pressed('q'), plotting_rewards = keyboard.is_pressed('q'),
                               train = "pred", test = "pred", 
                               pred = pred, prey = prey, 
-                              pred_condition = False, prey_condition = "still", arena = arena,
+                              pred_condition = False, prey_condition = "still", arena_name = arena_name,
                               pred_exploration=explorations[0], prey_exploration=explorations[1])
         hard_list.append(win)
         pred_losses = pred.update_networks(batch_size = 16, iterations = 4)
@@ -274,13 +274,9 @@ while(e <= 100):
     
     
     
-    
 
-run_with_GUI(test = False, pred = pred, prey = prey,  
-             pred_condition = False, prey_condition = False, 
-             GUI = True, episodes = 100, arena = arena)
 
 run_with_GUI(test = "pred", pred = pred, prey = prey, 
              pred_condition = None, prey_condition = "still", 
-             GUI = False, episodes = 1, arena = arena, render = False)
+             GUI = False, episodes = 1, arena_name = arena_name, render = False)
 

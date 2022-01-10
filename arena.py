@@ -44,7 +44,7 @@ def get_arena(arena = "arena.png"):
 
 
 if __name__ == "__main__":
-    arena, open_spots, hard_spot_pairs_for_pred, hard_spot_pairs_for_prey, w, h = get_arena(arena = "bigger_arena.png")
+    arena, open_spots, hard_spot_pairs_for_pred, hard_spot_pairs_for_prey, w, h = get_arena(arena = "empty_arena.png")
     print("\nArena shape:", arena.shape)
     print("\nOpen spots:")
     for spot in open_spots:
@@ -64,8 +64,8 @@ if __name__ == "__main__":
 agent_size = .5             # How big are agents?
 image_size = 16             # How big are agent observations?
 rgbd_input = (image_size, image_size, 4)
-max_velocity = 30           # Maximum velocity?
-max_velocity_change = 10    # How much can an agent change velocity?
+max_speed = 30           # Maximum speed?
+max_speed_change = 10    # How much can an agent change speed?
 max_angle_change = pi / 2   # How much can an agent change angle?
 too_close = .6              # How close must the predator be to win?
 
@@ -90,8 +90,8 @@ def wiggle(x, y):
     return([x, y, .5])
 
 # Make arena! 
-def start_arena(test = False, physicsClient = 0, name = "arena.png", already_constructed = False):
-    arena, open_spots, hard_spot_pairs_for_pred, hard_spot_pairs_for_prey, w, h = get_arena(name)
+def start_arena(test = False, physicsClient = 0, arena_name = "arena.png", already_constructed = False):
+    arena, open_spots, hard_spot_pairs_for_pred, hard_spot_pairs_for_prey, w, h = get_arena(arena_name)
     wall_ids = []
     # Construct with cubes the same color as the image-pixels.
     if(not already_constructed):
@@ -110,7 +110,7 @@ def start_arena(test = False, physicsClient = 0, name = "arena.png", already_con
     elif(test == "prey"):   pos_pred, pos_prey = random.sample(hard_spot_pairs_for_prey,1)[0]
     else:                   pos_pred, pos_prey = random.sample(open_spots,2)
     yaw_pred, yaw_prey = random.uniform(0, 2*pi), random.uniform(0, 2*pi)
-    vel_pred, vel_prey  = random.uniform(0,max_velocity), random.uniform(0,max_velocity)
+    speed_pred, speed_prey  = random.uniform(0,max_speed), random.uniform(0,max_speed)
     
     os.chdir(file_1)
     file = "sphere2red.urdf"
@@ -120,7 +120,7 @@ def start_arena(test = False, physicsClient = 0, name = "arena.png", already_con
     pos = wiggle(pos_pred[0], pos_pred[1])
     ors = p.getQuaternionFromEuler([0,0,yaw_pred])
     pred = p.loadURDF(file,pos,ors,globalScaling = agent_size, physicsClientId = physicsClient)
-    x, y = cos(yaw_pred)*vel_pred, sin(yaw_pred)*vel_pred
+    x, y = cos(yaw_pred)*speed_pred, sin(yaw_pred)*speed_pred
     p.resetBaseVelocity(pred, (x,y,0),(0,0,0), physicsClientId = physicsClient)
     p.changeVisualShape(pred, -1, rgbaColor = [1,0,0,1], physicsClientId = physicsClient)
     
@@ -128,9 +128,9 @@ def start_arena(test = False, physicsClient = 0, name = "arena.png", already_con
     pos = wiggle(pos_prey[0], pos_prey[1])
     ors = p.getQuaternionFromEuler([0,0,yaw_prey])
     prey = p.loadURDF(file,pos,ors,globalScaling = agent_size, physicsClientId = physicsClient)
-    x, y = cos(yaw_prey)*vel_prey, sin(yaw_prey)*vel_prey
+    x, y = cos(yaw_prey)*speed_prey, sin(yaw_prey)*speed_prey
     p.resetBaseVelocity(prey, (x,y,0),(0,0,0), physicsClientId = physicsClient)
     p.changeVisualShape(prey, -1, rgbaColor = [0,0,1,1], physicsClientId = physicsClient)
     
     os.chdir(file_2)
-    return(pred, prey, pos_pred, pos_prey, yaw_pred, yaw_prey, vel_pred, vel_prey, wall_ids)
+    return(pred, prey, pos_pred, pos_prey, yaw_pred, yaw_prey, speed_pred, speed_prey, wall_ids)
