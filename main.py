@@ -253,8 +253,8 @@ while(e <= 100):
         if(explorations[0] > .01 and explorations[0] < .05): explorations = 0, 0
         elif(explorations[0] > .01): explorations = explorations[0]/2, explorations[1]/2
         else: plot_losses(losses); break
-    if(     (e >= 4 and win_hard[-1] < 10) or
-            (e >= 5 and win_hard[-1] < 20)):
+    if(     (e >= 10 and win_hard[-1] < 10) or
+            (e >= 15 and win_hard[-1] < 20)):
         print("\n\nNot great. Starting again!\n\n")
         e = 0
         explorations = starting_explorations
@@ -262,6 +262,9 @@ while(e <= 100):
         win_med = []
         win_hard= []
         losses = []
+        pred = RecurrentTD3()
+        prey = RecurrentTD3()
+
 
 
         
