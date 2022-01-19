@@ -3,7 +3,7 @@ import os
 os.environ["KMP_DUPLICATE_LIB_OK"]="TRUE" # I don't know what this is, but it's necessary. 
 
 file_1 = r"C:\Users\tedjt\Desktop\pred_prey"  # When I move here, I cannot restart my kernel? 
-file_2 = r"C:\Users\tedjt"                              # When I move here, I CAN restart my kernel? 
+file_2 = r"C:\Users\tedjt"                    # When I move here, I CAN restart my kernel? 
 
 import torch
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -11,24 +11,151 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 if(device.type == "cpu"):   print("\n\nAAAAAAAUGH! CPU! >:C\n")
 else:                       print("\n\nUsing CUDA! :D\n")
 
-# Monitor GPU memory.
-def get_free_mem(string = ""):
-    r = torch.cuda.memory_reserved(0)
-    a = torch.cuda.memory_allocated(0)
-    f = r-a  # free inside reserved
-    print("\n{}: {}.\n".format(string, f))
-
-# Remove from GPU memory.
-def delete_these(verbose = False, *args):
-    if(verbose): get_free_mem("Before deleting")
-    del args
-    torch.cuda.empty_cache()
-    if(verbose): get_free_mem("After deleting")
-
 # Track seconds starting right now. 
 import datetime
 start_time = datetime.datetime.now()
+def reset_start_time():
+  global start_time
+  start_time = datetime.datetime.now()
 def duration():
-    change_time = datetime.datetime.now() - start_time
-    change_time = change_time - datetime.timedelta(microseconds=change_time.microseconds)
-    return(change_time)
+  change_time = datetime.datetime.now() - start_time
+  change_time = change_time - datetime.timedelta(microseconds=change_time.microseconds)
+  return(change_time)
+
+# Monitor GPU memory.
+def get_free_mem(string = ""):
+  r = torch.cuda.memory_reserved(0)
+  a = torch.cuda.memory_allocated(0)
+  f = r-a  # free inside reserved
+  print("\n{}: {}.\n".format(string, f))
+
+# Remove from GPU memory.
+def delete_these(verbose = False, *args):
+  if(verbose): get_free_mem("Before deleting")
+  del args
+  torch.cuda.empty_cache()
+  if(verbose): get_free_mem("After deleting")
+  
+  
+  
+# How to get an input from keyboard.
+def get_input(string, okay, default = None):
+    if(type(okay) == list): okay = {i+1:okay[i] for i in range(len(okay))}
+    while(True):
+        inp = input("\n{}\n{}\n".format(string, okay))
+        if(inp == "" and default != None): 
+          if(type(default) == int): return(okay[default])
+          else:                     return(default)
+        try: 
+            if(inp in okay.values()): return(inp)
+            else:                     return(okay[int(inp)])
+        except: 
+            print("\n'{}' isn't a good answer.".format(inp))
+            
+            
+            
+# How to save plots.
+import matplotlib.pyplot as plt
+import os
+import shutil
+
+def empty_folder(folder):
+  os.chdir(file_1)
+  files = os.listdir("saves")
+  if(folder not in files): return
+  shutil.rmtree("saves/folder")
+  os.chdir(file_2)
+
+def make_folder(folder):
+  os.chdir(file_1)
+  files = os.listdir("saves")
+  if(folder in files): return
+  os.mkdir("saves/"+folder)
+  os.mkdir("saves/"+folder+"/plots")
+  os.mkdir("saves/"+folder+"/preds")
+  os.mkdir("saves/"+folder+"/preys")
+  os.chdir(file_2)
+
+def save_plot(name, folder = "default"):
+  make_folder(folder)
+  os.chdir(file_1)
+  plt.savefig("saves/"+folder+"/plots/"+name)
+  os.chdir(file_2)
+  
+  
+  
+  
+  
+  
+  
+  
+# How to plot an episode's rewards.
+def plot_rewards(rewards, name = None, folder = "default"):
+  total_length = len(rewards)
+  x = [i for i in range(1, total_length + 1)]
+  plt.plot(x, [r[0] for r in rewards], color = "lightcoral") # Predator
+  plt.plot(x, [r[1] for r in rewards], color = "turquoise")  # Prey
+  plt.title("Rewards")
+  plt.xlabel("Time")
+  plt.ylabel("Reward")
+  if(name!=None): save_plot(name, folder)
+  plt.show()
+  plt.close()
+  
+  
+# How to plot losses.
+def plot_losses(losses, too_long = 300, name = None, folder = "default"):
+  total_length = len(losses)
+  x = [i for i in range(1, total_length + 1)]
+  if(too_long != None and total_length > too_long):
+    x = x[-too_long:]; losses = losses[-too_long:]
+
+  actor_x  = [x_ for i, x_ in enumerate(x) if losses[i][0] != None]
+  pred_actor_y = [l[0] for l in losses if l[0] != None]
+  prey_actor_y = [l[3] for l in losses if l[3] != None]
+
+  critic_x = [x_ for i, x_ in enumerate(x) if losses[i][1] != None]
+  pred_critic_1_y = [l[1] for l in losses if l[1] != None]
+  pred_critic_2_y = [l[2] for l in losses if l[2] != None]
+  prey_critic_1_y = [l[4] for l in losses if l[4] != None]
+  prey_critic_2_y = [l[5] for l in losses if l[5] != None]
+  
+  fig, ax1 = plt.subplots() 
+  ax2 = ax1.twinx() 
+  ax1.plot(actor_x, pred_actor_y, color = "#ff0000")
+  ax1.plot(actor_x, prey_actor_y, color = "#0000ff")
+  ax2.plot(critic_x, pred_critic_1_y, color = "lightcoral", linestyle = "--")
+  ax2.plot(critic_x, pred_critic_2_y, color = "lightcoral", linestyle = ":")
+  ax2.plot(critic_x, prey_critic_1_y, color = "turquoise", linestyle = "--")
+  ax2.plot(critic_x, prey_critic_2_y, color = "turquoise", linestyle = ":")
+  plt.title("Losses")
+  plt.xlabel("Training iterations")
+  ax1.set_ylabel("Actor losses")
+  ax2.set_ylabel("Critic losses")
+  if(name!=None): save_plot(name, folder)
+  plt.show()
+  plt.close()
+  
+  
+  
+  
+  
+# How to plot predator victory-rates.
+def plot_wins(win_easy, win_med, win_hard, max_len = None, name = None, folder = "default"):
+  total_length = len(win_easy)
+  x = [i for i in range(1, len(win_easy)+1)]
+  if(max_len != None and total_length > max_len):
+    x = x[-max_len:]
+    win_easy = win_easy[-max_len:]
+    win_med = win_med[-max_len:]
+    win_hard = win_hard[-max_len:]
+  plt.plot(x, win_easy, color = "turquoise")
+  plt.plot(x, win_med, color = "gray")
+  plt.plot(x, win_hard, color = "lightcoral")
+  plt.ylim([0, 1])
+  plt.title("Predator win-rates")
+  plt.xlabel("Epochs")
+  plt.ylabel("Predator win-rate")
+  if(name!=None): save_plot(name, folder)
+  plt.show()
+  plt.close()

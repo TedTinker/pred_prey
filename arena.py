@@ -16,7 +16,7 @@ def get_arena(arena_name = "arena.png"):
 
     # Get PNG image.
     os.chdir(file_1) 
-    arena = cv2.imread(arena_name)
+    arena = cv2.imread("arenas/" + arena_name)
     os.chdir(file_2) 
     w,h,_ = arena.shape
     
@@ -127,7 +127,7 @@ def start_arena(test = False, physicsClient = 0, arena_name = "arena.png", alrea
 
 
 if __name__ == "__main__":
-    arena, open_spots, hard_spot_pairs_for_pred, hard_spot_pairs_for_prey, w, h = get_arena(arena = "empty_arena.png")
+    arena, open_spots, hard_spot_pairs_for_pred, hard_spot_pairs_for_prey, w, h = get_arena(arena_name = "empty_arena.png")
     print("\nArena shape:", arena.shape)
     print("\nOpen spots:")
     for spot in open_spots:

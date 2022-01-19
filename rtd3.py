@@ -510,9 +510,9 @@ class RecurrentTD3(RecurrentOffPolicyRLAlgorithm):
                 return np.clip(greedy_action + self.action_noise * np.random.randn(self.action_dim), -1.0, 1.0)
 
     def update_networks(self, batch_size = 16, iterations = 1):
-        if(iterations != 1): return([self.update_networks(batch_size) for _ in range(iterations)])
+        if(iterations != 1): return(np.array([self.update_networks(batch_size) for _ in range(iterations)])) 
         b = self.episodes.sample(batch_size)
-        if(b == False): return([0,0])
+        if(b == False): return([None, None, None])
                 
         bs, num_bptt = b.r.shape[0], b.r.shape[1]
 
@@ -619,10 +619,11 @@ class RecurrentTD3(RecurrentOffPolicyRLAlgorithm):
             polyak_update(targ_net=self.actor_targ, pred_net=self.actor, polyak=self.polyak)
             polyak_update(targ_net=self.Q1_targ, pred_net=self.Q1, polyak=self.polyak)
             polyak_update(targ_net=self.Q2_targ, pred_net=self.Q2, polyak=self.polyak)
+            policy_loss = policy_loss.cpu().detach()
         else:
-            policy_loss = torch.tensor(0)
+          policy_loss = None
 
-        return([Q1_loss.detach().cpu(), policy_loss.detach().cpu()])
+        return(policy_loss, Q1_loss.cpu().detach(), Q2_loss.cpu().detach())
         
     
     

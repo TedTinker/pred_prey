@@ -29,7 +29,7 @@ from copy import deepcopy
 from itertools import product
 
 # How are agents rewarded/punished each step? 
-dist_d      = 1     # Based on distance
+dist_d      = .1     # Based on distance
 closer_d    = 10     # Based on distance closer
 speed_d       = 0     # Based on speed
 step_d      = 0     # Based on how many steps have passed
@@ -73,8 +73,8 @@ class PredPreyEnv():
             self, 
             test = False,               # Is this a test for either agent? "pred" or "prey"
             GUI = False,                # Is it rendered on-screen?
-            pred_condition = False,     # [None, "still" or "random"]
-            prey_condition = False,     # [None, "still" or "random"]
+            pred_condition = False,     # [None, "pin" or "random"]
+            prey_condition = False,     # [None, "pin" or "random"]
             arena_name = "arena.png"):
         self.arena_name = arena_name
         self.already_constructed = False
@@ -211,8 +211,8 @@ class PredPreyEnv():
         dist_before = self.agent_dist()
         self.change_angle_speed(self.pred, angle_1, speed_1)
         self.change_angle_speed(self.prey, angle_2, speed_2)
-        if(self.pred_condition == "still" or self.pred_energy <= 0): p.resetBaseVelocity(self.pred, (0,0,0), (0,0,0), physicsClientId = self.physicsClient); self.speed_pred = 0
-        if(self.prey_condition == "still" or self.prey_energy <= 0): p.resetBaseVelocity(self.prey, (0,0,0), (0,0,0), physicsClientId = self.physicsClient); self.speed_prey = 0
+        if(self.pred_condition == "pin" or self.pred_energy <= 0): p.resetBaseVelocity(self.pred, (0,0,0), (0,0,0), physicsClientId = self.physicsClient); self.speed_pred = 0
+        if(self.prey_condition == "pin" or self.prey_energy <= 0): p.resetBaseVelocity(self.prey, (0,0,0), (0,0,0), physicsClientId = self.physicsClient); self.speed_prey = 0
         p.stepSimulation(physicsClientId = self.physicsClient)
         self.pos_pred, _ = p.getBasePositionAndOrientation(self.pred, physicsClientId = self.physicsClient)
         self.pos_prey, _ = p.getBasePositionAndOrientation(self.prey, physicsClientId = self.physicsClient)

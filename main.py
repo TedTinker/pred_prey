@@ -14,7 +14,7 @@ import keyboard
 
 file = r"C:\Users\tedjt\Desktop\pred_prey"
 os.chdir(file) 
-from utils import file_1, file_2, device, get_free_mem, delete_these, duration
+from utils import file_1, file_2, device, get_free_mem, delete_these, duration, save_plot, plot_wins
 from arena import rgbd_input, too_close
 from pred_prey_env import PredPreyEnv, run_with_GUI
 from rtd3 import RecurrentTD3
@@ -55,7 +55,7 @@ e = 0
 
 
 from itertools import product
-all_env_params = [_ for _ in product((False, "pred", "prey"), (False, "random", "still"), (False, "random", "still"))]
+all_env_params = [_ for _ in product((False, "pred", "prey"), (False, "random", "pin"), (False, "random", "pin"))]
 env_dict = {(test, pred_condition, prey_condition) : PredPreyEnv(GUI = False, test = test, pred_condition = pred_condition, prey_condition = prey_condition, arena_name = arena_name) for test, pred_condition, prey_condition in all_env_params}
 
 def add_discount(rewards, last, GAMMA = .9):
@@ -179,27 +179,19 @@ max_len = 300
 per_epoch = 33
 
 
-def plot_wins(win_easy, win_med, win_hard):
-    total_length = len(win_easy)
-    x = [i for i in range(1, len(win_easy)+1)]
-    if(len(win_easy) > max_len):
-        x = x[-max_len:]
-        win_easy = win_easy[-max_len:]
-        win_med = win_med[-max_len:]
-        win_hard = win_hard[-max_len:]
-    plt.plot(x, win_easy, color = "turquoise")
-    plt.plot(x, win_med, color = "gray")
-    plt.plot(x, win_hard, color = "lightcoral")
-    plt.ylim([0, 100])
-    os.chdir(file_1) 
-    plt.savefig(folder + "/images/{}.png".format(str(total_length).zfill(5)))
-    os.chdir(file_2)
-    plt.show()
-    plt.close()
+
+  
+def get_rolling_average(wins, roll = 100):
+  if(len(wins) < roll):
+    return(sum(wins)/len(wins))
+  return(sum(wins[-roll:])/roll)
 
 win_easy = []
 win_med = []
 win_hard= []
+win_easy_rolled = []
+win_med_rolled = []
+win_hard_rolled= []
 losses = []
 
 starting_explorations = 1, 1
@@ -207,9 +199,6 @@ explorations = starting_explorations
 
 while(e <= 100):
     e += 1
-    easy_list = []
-    med_list = []
-    hard_list = []
     
     print()
     print("Explorations:", explorations)
@@ -218,23 +207,26 @@ while(e <= 100):
         win, length = session(GUI = keyboard.is_pressed('q'), plotting_rewards = keyboard.is_pressed('q'),
                               train = "pred", test = "prey", 
                               pred = pred, prey = prey,
-                              pred_condition = False, prey_condition = "still", arena_name = arena_name,
+                              pred_condition = False, prey_condition = "pin", arena_name = arena_name,
                               pred_exploration=explorations[0], prey_exploration=explorations[1])
-        easy_list.append(win)
+        win_easy.append(win)
+        win_easy_rolled.append(get_rolling_average(win_easy))
         
         win, length = session(GUI = keyboard.is_pressed('q'), plotting_rewards = keyboard.is_pressed('q'),
                               train = "pred", test = False, 
                               pred = pred, prey = prey, 
-                              pred_condition = False, prey_condition = "still", arena_name = arena_name,
+                              pred_condition = False, prey_condition = "pin", arena_name = arena_name,
                               pred_exploration=explorations[0], prey_exploration=explorations[1])
-        med_list.append(win)
+        win_med.append(win)
+        win_med_rolled.append(get_rolling_average(win_med))
 
         win, length = session(GUI = keyboard.is_pressed('q'), plotting_rewards = keyboard.is_pressed('q'),
                               train = "pred", test = "pred", 
                               pred = pred, prey = prey, 
-                              pred_condition = False, prey_condition = "still", arena_name = arena_name,
+                              pred_condition = False, prey_condition = "pin", arena_name = arena_name,
                               pred_exploration=explorations[0], prey_exploration=explorations[1])
-        hard_list.append(win)
+        win_hard.append(win)
+        win_hard_rolled.append(get_rolling_average(win_hard))
         pred_losses = pred.update_networks(batch_size = 16, iterations = 4)
         #prey_losses = prey.update_networks(batch_size = 16, iterations = 4)
         losses += [(p[0], p[1], q[0], q[1]) for p, q in zip(pred_losses, pred_losses)]
@@ -243,18 +235,15 @@ while(e <= 100):
             print("Explorations:", explorations)
             plot_losses(losses, 500)
         
-    win_easy.append(sum(easy_list)/per_epoch * 100)
-    win_med.append(sum(med_list)/per_epoch * 100)
-    win_hard.append(sum(hard_list)/per_epoch * 100)
     print("Total duration: {}.".format(duration()))
-    plot_wins(win_easy, win_med, win_hard)
+    plot_wins(win_easy_rolled, win_med_rolled, win_hard_rolled, name = "wins_{}.png".format(e))
 
-    if(win_easy[-1] >= 90 and win_med[-1] >= 90 and win_hard[-1] >= 90): 
+    if(win_easy_rolled[-1] >= .9 and win_med_rolled[-1] >= .9 and win_hard_rolled[-1] >= .9): 
         if(explorations[0] > .01 and explorations[0] < .05): explorations = 0, 0
         elif(explorations[0] > .01): explorations = explorations[0]/2, explorations[1]/2
         else: plot_losses(losses); break
-    if(     (e >= 10 and win_hard[-1] < 10) or
-            (e >= 15 and win_hard[-1] < 20)):
+    if(     (e >= 10 and win_hard_rolled[-1] < .1) or
+            (e >= 15 and win_hard_rolled[-1] < .2)):
         print("\n\nNot great. Starting again!\n\n")
         e = 0
         explorations = starting_explorations
@@ -262,9 +251,6 @@ while(e <= 100):
         win_med = []
         win_hard= []
         losses = []
-        pred = RecurrentTD3()
-        prey = RecurrentTD3()
-
 
 
         
@@ -280,6 +266,6 @@ while(e <= 100):
 
 
 run_with_GUI(test = "pred", pred = pred, prey = prey, 
-             pred_condition = None, prey_condition = "still", 
-             GUI = False, episodes = 10, arena_name = arena_name, render = False)
+             pred_condition = None, prey_condition = "pin", 
+             GUI = True, episodes = 10, arena_name = arena_name, render = False)
 
