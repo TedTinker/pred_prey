@@ -171,15 +171,17 @@ def plot_wins(win_easy, win_med, win_hard, max_len = None, name = None, folder =
   
   
   
-def save_pred_prey(pred, prey, folder = "default", sub = ""):
-    os.chdir(file_1) 
-    torch.save(pred.state_dict(), folder + "/pred/pred{}.pt".format(sub))
-    torch.save(prey.state_dict(), folder + "/prey/prey{}.pt".format(sub))
+# How to save/load pred/prey
+
+def save_pred_prey(pred, prey, post = "", folder = "default"):
+    os.chdir(file_1)
+    torch.save(pred.state_dict(), "saves/" + folder + "/preds/pred{}.pt".format(post))
+    torch.save(prey.state_dict(), "saves/" + folder + "/preys/prey{}.pt".format(post))
     os.chdir(file_2)
 
-def load_pred_prey(pred, prey, folder = "default", sub = ""):
-    os.chdir(file_1) 
-    pred.load_state_dict(torch.load(folder + "/pred/pred{}.pt".format(sub)))
-    prey.load_state_dict(torch.load(folder + "/prey/prey{}.pt".format(sub)))
+def load_pred_prey(pred, prey, post = "", folder = "default"):
+    os.chdir(file_1)
+    pred.load_state_dict(torch.load("saves/" + folder + "/pred/pred{}.pt".format(post)))
+    prey.load_state_dict(torch.load("saves/" + folder + "/prey/prey{}.pt".format(post)))
     os.chdir(file_2)
     return(pred, prey)
