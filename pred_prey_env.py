@@ -9,7 +9,7 @@ import os
 file = r"C:\Users\tedjt\Desktop\pred_prey"
 os.chdir(file) 
 from utils import device, file_1, file_2, duration
-from arena import get_physics, start_arena, max_speed, max_speed_change, max_angle_change, too_close, image_size
+from arena import get_physics, start_arena, min_speed, max_speed, max_speed_change, max_angle_change, too_close, image_size
 
 
 
@@ -133,7 +133,7 @@ class PredPreyEnv():
         #print("New:", round(degrees(new_yaw)))
         
         new_speed = old_speed + speed
-        new_speed = sorted((0, max_speed, new_speed))[1]
+        new_speed = sorted((min_speed, max_speed, new_speed))[1]
         x = cos(new_yaw)*new_speed
         y = sin(new_yaw)*new_speed
         p.resetBaseVelocity(agent, (x,y,0), (0,0,0), physicsClientId = self.physicsClient)

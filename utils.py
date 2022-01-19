@@ -109,6 +109,8 @@ def plot_losses(losses, too_long = 300, name = None, folder = "default"):
   x = [i for i in range(1, total_length + 1)]
   if(too_long != None and total_length > too_long):
     x = x[-too_long:]; losses = losses[-too_long:]
+  print(len(losses))
+  print(len(losses[-1]))
 
   actor_x  = [x_ for i, x_ in enumerate(x) if losses[i][0] != None]
   pred_actor_y = [l[0] for l in losses if l[0] != None]
@@ -159,3 +161,25 @@ def plot_wins(win_easy, win_med, win_hard, max_len = None, name = None, folder =
   if(name!=None): save_plot(name, folder)
   plt.show()
   plt.close()
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+def save_pred_prey(pred, prey, folder = "default", sub = ""):
+    os.chdir(file_1) 
+    torch.save(pred.state_dict(), folder + "/pred/pred{}.pt".format(sub))
+    torch.save(prey.state_dict(), folder + "/prey/prey{}.pt".format(sub))
+    os.chdir(file_2)
+
+def load_pred_prey(pred, prey, folder = "default", sub = ""):
+    os.chdir(file_1) 
+    pred.load_state_dict(torch.load(folder + "/pred/pred{}.pt".format(sub)))
+    prey.load_state_dict(torch.load(folder + "/prey/prey{}.pt".format(sub)))
+    os.chdir(file_2)
+    return(pred, prey)

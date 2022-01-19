@@ -52,7 +52,8 @@ def get_arena(arena_name = "arena.png"):
 agent_size = .5             # How big are agents?
 image_size = 16             # How big are agent observations?
 rgbd_input = (image_size, image_size, 4)
-max_speed = 30           # Maximum speed?
+min_speed = 10
+max_speed = 40           # Maximum speed?
 max_speed_change = 10    # How much can an agent change speed?
 max_angle_change = pi / 2   # How much can an agent change angle?
 too_close = .6              # How close must the predator be to win?
@@ -98,7 +99,7 @@ def start_arena(test = False, physicsClient = 0, arena_name = "arena.png", alrea
     elif(test == "prey"):   pos_pred, pos_prey = random.sample(hard_spot_pairs_for_prey,1)[0]
     else:                   pos_pred, pos_prey = random.sample(open_spots,2)
     yaw_pred, yaw_prey = random.uniform(0, 2*pi), random.uniform(0, 2*pi)
-    speed_pred, speed_prey  = random.uniform(0,max_speed), random.uniform(0,max_speed)
+    speed_pred, speed_prey  = random.uniform(min_speed,max_speed), random.uniform(min_speed,max_speed)
     
     os.chdir(file_1)
     file = "sphere2red.urdf"

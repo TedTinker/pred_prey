@@ -14,7 +14,9 @@ import keyboard
 
 file = r"C:\Users\tedjt\Desktop\pred_prey"
 os.chdir(file) 
-from utils import file_1, file_2, device, get_free_mem, delete_these, duration, save_plot, plot_wins
+from utils import file_1, file_2, device, get_free_mem, delete_these, \
+    duration, save_plot, plot_wins, plot_losses, plot_rewards, \
+    save_pred_prey, load_pred_prey
 from arena import rgbd_input, too_close
 from pred_prey_env import PredPreyEnv, run_with_GUI
 from rtd3 import RecurrentTD3
@@ -27,28 +29,7 @@ arena_name = "empty_arena.png"
 
 folder = "empty_prey_pinned"
 
-def save_pred_prey(folder = folder, sub = ""):
-    os.chdir(file_1) 
-    if not os.path.exists(folder):  os.makedirs(folder)
-    if not os.path.exists(folder + "/pred"):  os.makedirs(folder + "/pred")
-    if not os.path.exists(folder + "/prey"):  os.makedirs(folder + "/prey")
-    if not os.path.exists(folder + "/images"):  os.makedirs(folder + "/images")
-    torch.save(pred.state_dict(), folder + "/pred/pred{}.pt".format(sub))
-    torch.save(prey.state_dict(), folder + "/prey/prey{}.pt".format(sub))
-    os.chdir(file_2)
 
-save_pred_prey(folder, "_0_epochs")
-
-def load_pred_prey(folder = folder, sub = ""):
-    os.chdir(file_1) 
-    #os.listdir(file + "\\" + folder + "\pred")
-    pred.load_state_dict(torch.load(folder + "/pred/pred{}.pt".format(sub)))
-    prey.load_state_dict(torch.load(folder + "/prey/prey{}.pt".format(sub)))
-    os.chdir(file_2)
-    return(pred, prey)
-    
-#pred, prey = load_pred_prey("empty_rtd3", "_101_epochs")
-#pred, prey = load_pred_prey(folder, "_transfer")
 
 e = 0
 
@@ -64,12 +45,6 @@ def add_discount(rewards, last, GAMMA = .9):
     #for r, d in zip(rewards, discounts):
     #    print("{} + {} = {}".format(r, d, r+d))
     return([r + d for r, d in zip(rewards, discounts)])
-
-def include_steps(rewards, loss_per_step = .003, add = False):
-    steps = len(rewards)
-    if(add):
-        return([r + steps*loss_per_step for r in rewards])
-    return([r - steps*loss_per_step for r in rewards])
 
 
 def session(
@@ -121,9 +96,7 @@ def session(
     
     r=1
     reward_list_pred = add_discount([p[4] for p in to_push_pred], r if win else -r)
-    reward_list_pred = include_steps(reward_list_pred)
     reward_list_prey = add_discount([p[4] for p in to_push_prey], -r if win else r)
-    reward_list_prey = include_steps(reward_list_prey, add = True)
     
     to_push_pred = [(p[0], p[1], p[2], p[3], torch.tensor(r), p[5], p[6], p[7], p[8], p[9]) for p, r in zip(to_push_pred, reward_list_pred)]
     to_push_prey = [(p[0], p[1], p[2], p[3], torch.tensor(r), p[5], p[6], p[7], p[8], p[9]) for p, r in zip(to_push_prey, reward_list_prey)]
@@ -139,39 +112,7 @@ def session(
 
 
 
-def plot_rewards(rewards):
-    total_length = len(rewards)
-    x = [i for i in range(1, total_length + 1)]
-    plt.plot(x, [r[0] for r in rewards], color = "lightcoral")
-    plt.plot(x, [r[1] for r in rewards], color = "turquoise")
-    #plt.ylim([-5, 5])
-    plt.title("Rewards")
-    plt.show()
-    plt.close()
-    
-def plot_losses(losses, too_long = None):
-    total_length = len(losses)
-    x = [i for i in range(1, total_length + 1)]
-    if(too_long != None and total_length > too_long):
-        x = x[-too_long:]
-        losses = losses[-too_long:]
-    actor_x = [x_ for i, x_ in enumerate(x) if losses[i][1] != 0]
-    pred_actor_y = [l[1] for l in losses if l[1] != 0]
-    prey_actor_y = [l[3] for l in losses if l[3] != 0]
-    
-    fig, ax1 = plt.subplots() 
-    ax2 = ax1.twinx() 
-    ax1.plot(x, [l[0] for l in losses], color = "red")
-    ax2.plot(actor_x, pred_actor_y, color = "lightcoral")
-    ax1.plot(x, [l[2] for l in losses], color = "blue")
-    ax2.plot(actor_x, prey_actor_y, color = "turquoise")
-    #plt.ylim([-5, 5])
-    plt.title("Losses")
-    plt.show()
-    plt.close()
-    
-    
-    
+
     
     
 
@@ -191,8 +132,8 @@ win_med = []
 win_hard= []
 win_easy_rolled = []
 win_med_rolled = []
-win_hard_rolled= []
-losses = []
+win_hard_rolled = []
+losses = np.array([[None, None, None, None, None, None]])
 
 starting_explorations = 1, 1
 explorations = starting_explorations
@@ -229,14 +170,14 @@ while(e <= 100):
         win_hard_rolled.append(get_rolling_average(win_hard))
         pred_losses = pred.update_networks(batch_size = 16, iterations = 4)
         #prey_losses = prey.update_networks(batch_size = 16, iterations = 4)
-        losses += [(p[0], p[1], q[0], q[1]) for p, q in zip(pred_losses, pred_losses)]
-        #losses += pred_losses
+        losses = np.concatenate([losses, np.concatenate([pred_losses, pred_losses], axis = 1)])
         if(keyboard.is_pressed('q')):
             print("Explorations:", explorations)
             plot_losses(losses, 500)
         
     print("Total duration: {}.".format(duration()))
     plot_wins(win_easy_rolled, win_med_rolled, win_hard_rolled, name = "wins_{}.png".format(e))
+    save_pred_prey(pred, prey, folder, "_{}_epochs".format(e))
 
     if(win_easy_rolled[-1] >= .9 and win_med_rolled[-1] >= .9 and win_hard_rolled[-1] >= .9): 
         if(explorations[0] > .01 and explorations[0] < .05): explorations = 0, 0
@@ -250,11 +191,16 @@ while(e <= 100):
         win_easy = []
         win_med = []
         win_hard= []
-        losses = []
+        win_easy_rolled = []
+        win_med_rolled = []
+        win_hard_rolled = []
+        losses = np.array([[None, None, None, None, None, None]])
+        pred = RecurrentTD3()
+        prey = RecurrentTD3()
 
 
         
-    save_pred_prey(folder, "_{}_epochs".format(e))
+    save_pred_prey(pred, prey, folder, "_{}_epochs".format(e))
     print()
     
     
@@ -267,5 +213,5 @@ while(e <= 100):
 
 run_with_GUI(test = "pred", pred = pred, prey = prey, 
              pred_condition = None, prey_condition = "pin", 
-             GUI = True, episodes = 10, arena_name = arena_name, render = False)
+             GUI = True, episodes = 100, arena_name = arena_name, render = False)
 
