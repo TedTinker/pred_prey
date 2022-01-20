@@ -21,7 +21,7 @@ def episode(
         pred_condition = 0, prey_condition = 0, 
         arena_name = "empty_arena.png"):
     
-    env = PredPreyEnv(GUI = GUI, pred_condition = pred_condition, prey_condition = prey_condition, arena_name = arena_name)
+    env = PredPreyEnv(GUI = GUI, arena_name = arena_name)
     obs = env.reset(min_dif, max_dif, energy)  
     pred.train(), prey.train()
     done = False
@@ -37,7 +37,7 @@ def episode(
             prey_energy_before = env.prey_energy
 
             ang_speed_1, new_pred_hc = pred.act(obs[0], pred_speed_before, pred_energy_before, ang_speed_1, pred_hc, pred_condition)
-            ang_speed_2, new_prey_hc = prey.act(obs[1], prey_speed_before, prey_energy_before, ang_speed_2, prey_hc, pred_condition)
+            ang_speed_2, new_prey_hc = prey.act(obs[1], prey_speed_before, prey_energy_before, ang_speed_2, prey_hc, prey_condition)
                 
             new_obs, (r_pred, r_prey), done, dist_after = env.step(ang_speed_1, ang_speed_2)
                         

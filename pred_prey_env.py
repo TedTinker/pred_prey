@@ -67,8 +67,6 @@ class PredPreyEnv():
     def __init__(
             self, 
             GUI = False,                # Is it rendered on-screen?
-            pred_condition = False,     # [None, "pin" or "random"]
-            prey_condition = False,     # [None, "pin" or "random"]
             arena_name = "arena.png"):
         self.arena_name = arena_name
         self.arena = Arena(self.arena_name)
@@ -84,8 +82,6 @@ class PredPreyEnv():
         self.pred, self.prey = None, None
         self.steps = 0
         self.resets = 0
-        self.pred_condition = pred_condition
-        self.prey_condition = prey_condition
         self.normalize = False
         
     def reset(self, min_dif = 0, max_dif = 100, energy = 3000):
@@ -174,39 +170,31 @@ class PredPreyEnv():
         rgbd = torch.from_numpy(rgbd).to(device).float()
         return(rgbd)
     
+    def unnormalize(self, action): # from (-1, 1) to (min, max)
+      yaw = action[0] * self.max_angle_change
+      yaw = sorted((-self.max_angle_change, self.max_angle_change, yaw))[1]
+      spe = self.min_speed + ((action[1] + 1)/2) * (self.max_speed - self.min_speed)
+      spe = sorted((self.min_speed, self.max_speed, spe))[1] 
+      return(yaw, spe)
+    
     def step(self, ang_speed_1 = None, ang_speed_2 = None):
-        # If an agent is moving randomly, pick random movement.
-        if(self.pred_condition == "random"): 
-            angle_1 = random.uniform(-max_angle_change,max_angle_change)
-            speed_1 = random.uniform(-max_speed_change,max_speed_change)
-        # Otherwise, make sure the given movement is within allowance. 
-        else:
-            if(self.normalize):
-                angle_1 = -max_angle_change + (ang_speed_1[0] + 1.0) * 0.5 * (max_angle_change - -max_angle_change)
-                speed_1   = -max_speed_change + (ang_speed_1[1] + 1.0) * 0.5 * (max_speed_change - -max_speed_change)
-            else:   
-                angle_1 = ang_speed_1[0] 
-                speed_1 = ang_speed_1[1] 
-            angle_1 = sorted((-max_angle_change, max_angle_change, angle_1))[1]
-            speed_1 = sorted((-max_speed_change, max_speed_change, speed_1))[1]
-        if(self.prey_condition == "random"): 
-            angle_2 = random.uniform(-max_angle_change,max_angle_change)
-            speed_2 = random.uniform(-max_speed_change,max_speed_change)
-        else:
-            if(self.normalize):
-                angle_2 = -max_angle_change + (ang_speed_2[0] + 1.0) * 0.5 * (max_angle_change - -max_angle_change)
-                speed_2 = -max_speed_change + (ang_speed_2[1] + 1.0) * 0.5 * (max_speed_change - -max_speed_change)
-            else:   
-                angle_2 = ang_speed_2[0] 
-                speed_2 = ang_speed_2[1] 
-            angle_2 = sorted((-max_angle_change, max_angle_change, angle_2))[1]
-            speed_2 = sorted((-max_speed_change, max_speed_change, speed_2))[1]
+
+        angle_1 = ang_speed_1[0] 
+        speed_1 = ang_speed_1[1] 
+        angle_1 = sorted((-max_angle_change, max_angle_change, angle_1))[1]
+        speed_1 = sorted((-max_speed_change, max_speed_change, speed_1))[1]
+
+        angle_2 = ang_speed_2[0] 
+        speed_2 = ang_speed_2[1] 
+        angle_2 = sorted((-max_angle_change, max_angle_change, angle_2))[1]
+        speed_2 = sorted((-max_speed_change, max_speed_change, speed_2))[1]
+        
         self.steps += 1
         dist_before = self.agent_dist()
         self.change_angle_speed(self.pred, angle_1, speed_1)
         self.change_angle_speed(self.prey, angle_2, speed_2)
-        if(self.pred_condition == "pin" or self.pred_energy <= 0): p.resetBaseVelocity(self.pred, (0,0,0), (0,0,0), physicsClientId = self.physicsClient); self.speed_pred = 0
-        if(self.prey_condition == "pin" or self.prey_energy <= 0): p.resetBaseVelocity(self.prey, (0,0,0), (0,0,0), physicsClientId = self.physicsClient); self.speed_prey = 0
+        if(self.pred_energy <= 0): p.resetBaseVelocity(self.pred, (0,0,0), (0,0,0), physicsClientId = self.physicsClient); self.speed_pred = 0
+        if(self.prey_energy <= 0): p.resetBaseVelocity(self.prey, (0,0,0), (0,0,0), physicsClientId = self.physicsClient); self.speed_prey = 0
         p.stepSimulation(physicsClientId = self.physicsClient)
         self.pos_pred, _ = p.getBasePositionAndOrientation(self.pred, physicsClientId = self.physicsClient)
         self.pos_prey, _ = p.getBasePositionAndOrientation(self.prey, physicsClientId = self.physicsClient)
@@ -300,7 +288,11 @@ from tqdm import tqdm
 
 
 
-def run_with_GUI(min_dif = 0, max_dif = 100, energy = 3000, pred = None, prey = None, GUI = True, episodes = 100, pred_condition = False, prey_condition = False, arena_name = "arena.png", render = False):
+def run_with_GUI(
+        min_dif = 0, max_dif = 100, energy = 3000, arena_name = "arena.png", episodes = 100, 
+        pred = None, prey = None, pred_condition = 0, prey_condition = 0, 
+        GUI = True, render = False):
+    
     env = PredPreyEnv(GUI = GUI, pred_condition = pred_condition, prey_condition = prey_condition, arena_name = arena_name)
     win_list = []
     if(pred != None): pred.eval()

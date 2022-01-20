@@ -136,7 +136,8 @@ pred, prey = train()
     
 
 
-run_with_GUI(min_dif = 100, max_dif = 100, energy = 3000, pred = pred, prey = prey, 
-             pred_condition = None, prey_condition = "pin", 
-             GUI = True, episodes = 100, arena_name = "empty_arena.png", render = False)
+run_with_GUI(
+    min_dif = 100, max_dif = 100, energy = 3000, arena_name = "empty_arena.png", episodes = 100, 
+    pred = pred, prey = prey, pred_condition = 0, prey_condition = "pin", 
+    GUI = True, render = False)
 
