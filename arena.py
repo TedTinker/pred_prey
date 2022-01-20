@@ -44,8 +44,7 @@ class Arena():
                   i in range(len(self.pairs))]
     self.difficulties = [percentileofscore(distances, d) for d in distances]
   
-  def get_pair_with_difficulty(self, min_dif = None, max_dif = None):
-    if(min_dif == None): min_dif = 0; max_dif = 100
+  def get_pair_with_difficulty(self, min_dif = 0, max_dif = 100, verbose = False):
     if(max_dif == None): max_dif = min_dif
     if(min_dif > max_dif): min_dif = max_dif
     pair_list = []
@@ -53,6 +52,11 @@ class Arena():
       pair_list = [self.pairs[i] for i in range(len(self.pairs)) if \
                   self.difficulties[i] >= min_dif and self.difficulties[i] <= max_dif]
       min_dif -= 1; max_dif += 1
+    if(verbose):
+        print("Predator/Prey positions with minimum difficulty {}, maximum difficulty {}.".format(
+            min_dif, max_dif))
+        for p in pair_list:
+            print(p)
     return(random.choice(pair_list))
 
   def start_arena(
@@ -102,12 +106,6 @@ if __name__ == "__main__":
   file_1 = r"C:\Users\tedjt\Desktop\pred_prey"
   os.chdir(file_1)
   arena = Arena("empty_arena.png")
-  print("Open spots:")
-  for s in arena.open_spots:
-    print(s)
-  print("A pred/prey starting position easy for predator:")
-  for s in arena.get_pair_with_difficulty(0,0):
-    print(s)
-  print("A pred/prey starting positions hard for predator:")
-  for s in arena.get_pair_with_difficulty(100,100):
-    print(s)
+  arena.get_pair_with_difficulty(min_dif = 0, max_dif = 0, verbose = True)
+  arena.get_pair_with_difficulty(min_dif = 50, max_dif = 50, verbose = True)
+  arena.get_pair_with_difficulty(min_dif = 100, max_dif = 100, verbose = True)
