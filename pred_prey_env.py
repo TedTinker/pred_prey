@@ -14,7 +14,6 @@ from arena import get_physics, Arena
 
 min_speed = 10
 max_speed = 40
-max_speed_change = 10
 max_angle_change = pi/2
 too_close = .6
 image_size = 16
@@ -32,6 +31,8 @@ from matplotlib import pyplot as plt
 import matplotlib.gridspec as gridspec
 from copy import deepcopy
 from itertools import product
+from torchvision.transforms.functional import resize
+
 
 # How are agents rewarded/punished each step? 
 dist_d      = .1     # Based on distance
@@ -122,8 +123,7 @@ class PredPreyEnv():
         #print("Old:", round(degrees(old_yaw)))
         #print("New:", round(degrees(new_yaw)))
         
-        new_speed = old_speed + speed
-        new_speed = sorted((min_speed, max_speed, new_speed))[1]
+        new_speed = speed
         x = cos(new_yaw)*new_speed
         y = sin(new_yaw)*new_speed
         p.resetBaseVelocity(agent, (x,y,0), (0,0,0), physicsClientId = self.physicsClient)
@@ -156,39 +156,28 @@ class PredPreyEnv():
             nearVal = 0.2, 
             farVal = 10, physicsClientId = self.physicsClient
         )
-        w, h, rgba, depth, mask = p.getCameraImage(
-            width=image_size,
-            height=image_size,
-            projectionMatrix=proj_matrix,
-            viewMatrix=view_matrix, physicsClientId = self.physicsClient
-        )
-        rgb = rgba[:,:,0:-1]
-        rgb = np.divide(rgb,255)
-        rgb = rgb * 2 - 1
+        _, _, rgba, depth, _ = p.getCameraImage(
+          width=128, height=128,
+          projectionMatrix=proj_matrix, viewMatrix=view_matrix, 
+          physicsClientId = self.physicsClient)
+        
+        rgb = np.divide(rgba[:,:,:-1], 255) * 2 - 1
         d = np.expand_dims(depth, axis=-1)
         rgbd = np.concatenate([rgb, d], axis = -1)
-        rgbd = torch.from_numpy(rgbd).to(device).float()
+        rgbd = torch.from_numpy(rgbd).float()
+        rgbd = resize(rgbd.permute(-1,0,1), (image_size, image_size)).permute(1,2,0)
         return(rgbd)
     
     def unnormalize(self, action): # from (-1, 1) to (min, max)
-      yaw = action[0] * self.max_angle_change
-      yaw = sorted((-self.max_angle_change, self.max_angle_change, yaw))[1]
-      spe = self.min_speed + ((action[1] + 1)/2) * (self.max_speed - self.min_speed)
-      spe = sorted((self.min_speed, self.max_speed, spe))[1] 
+      yaw = action[0] * max_angle_change
+      yaw = sorted((-max_angle_change, max_angle_change, yaw))[1]
+      spe = min_speed + ((action[1] + 1)/2) * (max_speed - min_speed)
+      spe = sorted((min_speed, max_speed, spe))[1] 
       return(yaw, spe)
     
-    def step(self, ang_speed_1 = None, ang_speed_2 = None):
-
-        angle_1 = ang_speed_1[0] 
-        speed_1 = ang_speed_1[1] 
-        angle_1 = sorted((-max_angle_change, max_angle_change, angle_1))[1]
-        speed_1 = sorted((-max_speed_change, max_speed_change, speed_1))[1]
-
-        angle_2 = ang_speed_2[0] 
-        speed_2 = ang_speed_2[1] 
-        angle_2 = sorted((-max_angle_change, max_angle_change, angle_2))[1]
-        speed_2 = sorted((-max_speed_change, max_speed_change, speed_2))[1]
-        
+    def step(self, ang_speed_1, ang_speed_2):
+        angle_1, speed_1 = self.unnormalize(ang_speed_1)
+        angle_2, speed_2 = self.unnormalize(ang_speed_2)
         self.steps += 1
         dist_before = self.agent_dist()
         self.change_angle_speed(self.pred, angle_1, speed_1)
@@ -293,7 +282,7 @@ def run_with_GUI(
         pred = None, prey = None, pred_condition = 0, prey_condition = 0, 
         GUI = True, render = False):
     
-    env = PredPreyEnv(GUI = GUI, pred_condition = pred_condition, prey_condition = prey_condition, arena_name = arena_name)
+    env = PredPreyEnv(GUI = GUI, arena_name = arena_name)
     win_list = []
     if(pred != None): pred.eval()
     if(prey != None): prey.eval()
@@ -308,11 +297,11 @@ def run_with_GUI(
             if(pred != None):
                 ang_speed_1, pred_actor_hc = pred.act(obs[0], env.speed_pred, env.pred_energy, ang_speed_1, pred_actor_hc)
             else:
-                ang_speed_1 = (None, None)
+                ang_speed_1 = (-1, -1)
             if(prey != None):
                 ang_speed_2, prey_actor_hc = prey.act(obs[1], env.speed_prey, env.prey_energy, ang_speed_2, prey_actor_hc)
             else:
-                ang_speed_2 = (None, None)
+                ang_speed_2 = (-1, -1)
             obs, _, done, dist_after = env.step(ang_speed_1, ang_speed_2)
         win = dist_after < too_close
         win_list.append(win)
@@ -337,5 +326,5 @@ if __name__ == "__main__":
     print()
     env.close(forever = True)
     run_with_GUI(episodes = 100, arena_name = "empty_arena.png", 
-                 pred_condition = "random", prey_condition = "random",
+                 pred_condition = "pin", prey_condition = "pin",
                  render = False)

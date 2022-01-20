@@ -24,6 +24,8 @@ from scipy.stats import percentileofscore
 import random
 import os
 
+file_1 = r"C:\Users\tedjt\Desktop\pred_prey"
+
 def pythagorean(pos_1, pos_2):
   return ((pos_1[0] - pos_2[0])**2 + (pos_1[1] - pos_2[1])**2)**.5
 
@@ -31,10 +33,9 @@ class Arena():
   def __init__(self, arena_name,
                agent_size = .5):
     self.arena_name = arena_name
-    file_1 = r"C:\Users\tedjt\Desktop\pred_prey"
     os.chdir(file_1)
     self.arena = cv2.imread("arenas/" + arena_name); self.w, self.h, _ = self.arena.shape
-    file_2 = r"C:\Users\tedjt"
+    #file_2 = r"C:\Users\tedjt"
     #os.chdir(file_2)
     self.agent_size = agent_size
     self.open_spots = [(x,y) for x, y in product(range(self.w), range(self.h)) \
@@ -57,8 +58,8 @@ class Arena():
     if(verbose):
         print("Predator/Prey positions with minimum difficulty {}, maximum difficulty {}.".format(
             min_dif, max_dif))
-        for p in pair_list:
-            print(p)
+        for pair in pair_list:
+            print(pair)
     return(random.choice(pair_list))
 
   def start_arena(
@@ -104,8 +105,6 @@ class Arena():
 
 
 if __name__ == "__main__":
-  import os
-  file_1 = r"C:\Users\tedjt\Desktop\pred_prey"
   os.chdir(file_1)
   arena = Arena("empty_arena.png")
   arena.get_pair_with_difficulty(min_dif = 0, max_dif = 0, verbose = True)

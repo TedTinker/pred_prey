@@ -21,7 +21,7 @@ from copy import deepcopy
 file = r"C:\Users\tedjt\Desktop\pred_prey"
 os.chdir(file) 
 from utils import device, get_free_mem, delete_these
-from pred_prey_env import rgbd_input, max_speed_change, max_angle_change
+from pred_prey_env import rgbd_input
 from basics.abstract_algorithms import RecurrentOffPolicyRLAlgorithm
 from basics.utils import get_device, create_target, mean_of_unmasked_elements, polyak_update, save_net, load_net
 
@@ -458,11 +458,9 @@ class RecurrentTD3(RecurrentOffPolicyRLAlgorithm):
     summary, hc = self.actor_summarizer(state, speed, energy, action, hc, return_hidden=True)
     action = self.actor(summary)
     if(condition == "pin"):
-      action = torch.tensor([-max_angle_change,-max_speed_change]).unsqueeze(0)
+      action = torch.tensor([-1,-1])
     elif(condition == "random" or random.uniform(0,1) < condition):
-      angle = random.uniform(-max_angle_change,max_angle_change)
-      speed = random.uniform(-max_speed_change,max_speed_change)
-      action = torch.tensor([angle, speed]).unsqueeze(0)
+      action = torch.tensor([random.uniform(-1,1), random.uniform(-1,1)])
     return(action.view(2), hc)
 
   def update_networks(self, batch_size = 16, iterations = 1):
