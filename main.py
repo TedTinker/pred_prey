@@ -66,8 +66,7 @@ def train(arena_name = "empty_arena.png", folder = "default"):
             win, rewards = episode(pred = pred, prey = prey,
                                   GUI = keyboard.is_pressed('q'), 
                                   min_dif = 0, max_dif = 0, energy = 3000,
-                                  pred_condition = False, prey_condition = "pin", arena_name = arena_name,
-                                  pred_exploration=explorations[0], prey_exploration=explorations[1])
+                                  pred_condition = explorations[0], prey_condition = "pin", arena_name = arena_name)
             win_easy.append(win)
             win_easy_rolled.append(get_rolling_average(win_easy))
             if(keyboard.is_pressed('q')):
@@ -76,8 +75,7 @@ def train(arena_name = "empty_arena.png", folder = "default"):
             win, rewards = episode(pred = pred, prey = prey,
                                   GUI = keyboard.is_pressed('q'), 
                                   min_dif = 0, max_dif = 100, energy = 3000,
-                                  pred_condition = False, prey_condition = "pin", arena_name = arena_name,
-                                  pred_exploration=explorations[0], prey_exploration=explorations[1])
+                                  pred_condition = explorations[0], prey_condition = "pin", arena_name = arena_name)
             win_med.append(win)
             win_med_rolled.append(get_rolling_average(win_med))
             if(keyboard.is_pressed('q')):
@@ -86,8 +84,7 @@ def train(arena_name = "empty_arena.png", folder = "default"):
             win, rewards = episode(pred = pred, prey = prey,
                                   GUI = keyboard.is_pressed('q'), 
                                   min_dif = 100, max_dif = 100, energy = 3000,
-                                  pred_condition = False, prey_condition = "pin", arena_name = arena_name,
-                                  pred_exploration=explorations[0], prey_exploration=explorations[1])
+                                  pred_condition = explorations[0], prey_condition = "pin", arena_name = arena_name)
             win_hard.append(win)
             win_hard_rolled.append(get_rolling_average(win_hard))
             if(keyboard.is_pressed('q')):

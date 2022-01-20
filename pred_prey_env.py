@@ -314,11 +314,11 @@ def run_with_GUI(min_dif = 0, max_dif = 100, energy = 3000, pred = None, prey = 
         while(done == False):
             steps += 1
             if(pred != None):
-                ang_speed_1, pred_actor_hc = pred.get_action(obs[0], env.speed_pred, env.pred_energy, ang_speed_1, pred_actor_hc)
+                ang_speed_1, pred_actor_hc = pred.act(obs[0], env.speed_pred, env.pred_energy, ang_speed_1, pred_actor_hc)
             else:
                 ang_speed_1 = (None, None)
             if(prey != None):
-                ang_speed_2, prey_actor_hc = prey.get_action(obs[1], env.speed_prey, env.prey_energy, ang_speed_2, prey_actor_hc)
+                ang_speed_2, prey_actor_hc = prey.act(obs[1], env.speed_prey, env.prey_energy, ang_speed_2, prey_actor_hc)
             else:
                 ang_speed_2 = (None, None)
             obs, _, done, dist_after = env.step(ang_speed_1, ang_speed_2)

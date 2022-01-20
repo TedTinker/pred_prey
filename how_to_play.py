@@ -18,9 +18,8 @@ def episode(
         pred, prey, 
         GUI = False, 
         min_dif = 0, max_dif = 100, energy = 3000,
-        pred_condition = False, prey_condition = False, 
-        arena_name = "empty_arena.png", 
-        pred_exploration = 0, prey_exploration = 0):
+        pred_condition = 0, prey_condition = 0, 
+        arena_name = "empty_arena.png"):
     
     env = PredPreyEnv(GUI = GUI, pred_condition = pred_condition, prey_condition = prey_condition, arena_name = arena_name)
     obs = env.reset(min_dif, max_dif, energy)  
@@ -37,8 +36,8 @@ def episode(
             prey_speed_before = env.speed_prey
             prey_energy_before = env.prey_energy
 
-            ang_speed_1, new_pred_hc = pred.get_action(obs[0], pred_speed_before, pred_energy_before, ang_speed_1, pred_hc, pred_exploration)
-            ang_speed_2, new_prey_hc = prey.get_action(obs[1], prey_speed_before, prey_energy_before, ang_speed_2, prey_hc, prey_exploration)
+            ang_speed_1, new_pred_hc = pred.act(obs[0], pred_speed_before, pred_energy_before, ang_speed_1, pred_hc, pred_condition)
+            ang_speed_2, new_prey_hc = prey.act(obs[1], prey_speed_before, prey_energy_before, ang_speed_2, prey_hc, pred_condition)
                 
             new_obs, (r_pred, r_prey), done, dist_after = env.step(ang_speed_1, ang_speed_2)
                         
@@ -67,8 +66,8 @@ def episode(
     to_push_prey = [(p[0], p[1], p[2], p[3], torch.tensor(r), p[5], p[6], p[7], p[8], p[9]) for p, r in zip(to_push_prey, reward_list_prey)]
     
     for i in range(len(to_push_pred)):
-        pred.episodes.push(to_push_pred[i], pred)
-        prey.episodes.push(to_push_prey[i], prey)
+        pred.episodes.push(to_push_pred[i])
+        prey.episodes.push(to_push_prey[i])
     
     rewards = [(preds, preys) for preds, preys in zip(reward_list_pred, reward_list_prey)]
     return(win, rewards)
