@@ -5,11 +5,15 @@ os.environ["KMP_DUPLICATE_LIB_OK"]="TRUE" # I don't know what this is, but it's 
 file_1 = r"C:\Users\tedjt\Desktop\pred_prey"  # When I move here, I cannot restart my kernel? 
 file_2 = r"C:\Users\tedjt"                    # When I move here, I CAN restart my kernel? 
 
+
+
 import torch
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 if(device.type == "cpu"):   print("\n\nAAAAAAAUGH! CPU! >:C\n")
 else:                       print("\n\nUsing CUDA! :D\n")
+
+
 
 # Track seconds starting right now. 
 import datetime
@@ -21,6 +25,9 @@ def duration():
   change_time = datetime.datetime.now() - start_time
   change_time = change_time - datetime.timedelta(microseconds=change_time.microseconds)
   return(change_time)
+
+
+
 
 # Monitor GPU memory.
 def get_free_mem(string = ""):
@@ -64,7 +71,7 @@ def empty_folder(folder):
   files = os.listdir("saves")
   if(folder not in files): return
   shutil.rmtree("saves/folder")
-  os.chdir(file_2)
+  #os.chdir(file_2)
 
 def make_folder(folder):
   os.chdir(file_1)
@@ -74,13 +81,13 @@ def make_folder(folder):
   os.mkdir("saves/"+folder+"/plots")
   os.mkdir("saves/"+folder+"/preds")
   os.mkdir("saves/"+folder+"/preys")
-  os.chdir(file_2)
+  #os.chdir(file_2)
 
 def save_plot(name, folder = "default"):
   make_folder(folder)
   os.chdir(file_1)
   plt.savefig("saves/"+folder+"/plots/"+name)
-  os.chdir(file_2)
+  #os.chdir(file_2)
   
   
   
@@ -177,11 +184,11 @@ def save_pred_prey(pred, prey, post = "", folder = "default"):
     os.chdir(file_1)
     torch.save(pred.state_dict(), "saves/" + folder + "/preds/pred{}.pt".format(post))
     torch.save(prey.state_dict(), "saves/" + folder + "/preys/prey{}.pt".format(post))
-    os.chdir(file_2)
+    #os.chdir(file_2)
 
 def load_pred_prey(pred, prey, post = "", folder = "default"):
     os.chdir(file_1)
     pred.load_state_dict(torch.load("saves/" + folder + "/pred/pred{}.pt".format(post)))
     prey.load_state_dict(torch.load("saves/" + folder + "/prey/prey{}.pt".format(post)))
-    os.chdir(file_2)
+    #os.chdir(file_2)
     return(pred, prey)

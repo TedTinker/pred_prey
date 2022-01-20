@@ -9,11 +9,16 @@ import os
 file = r"C:\Users\tedjt\Desktop\pred_prey"
 os.chdir(file) 
 from utils import device, file_1, file_2, duration
-from arena import get_physics, start_arena, min_speed, max_speed, max_speed_change, max_angle_change, too_close, image_size
+from arena import get_physics, Arena
 
 
-
-
+min_speed = 10
+max_speed = 40
+max_speed_change = 10
+max_angle_change = pi/2
+too_close = .6
+image_size = 16
+rgbd_input = (16, 16, 4)
 
 
 
@@ -71,18 +76,16 @@ indexes = [i for i in range(10000,0,-1)]
 class PredPreyEnv():   
     def __init__(
             self, 
-            test = False,               # Is this a test for either agent? "pred" or "prey"
             GUI = False,                # Is it rendered on-screen?
             pred_condition = False,     # [None, "pin" or "random"]
             prey_condition = False,     # [None, "pin" or "random"]
             arena_name = "arena.png"):
         self.arena_name = arena_name
+        self.arena = Arena(self.arena_name)
         self.already_constructed = False
         self.index = indexes.pop()
-        self.test = test
         self.GUI = GUI
-        if(self.GUI):   self.physicsClient = get_physics(self.GUI, self.arena_name)
-        else:           self.physicsClient = get_physics()            
+        self.physicsClient = get_physics(self.GUI, self.arena.w, self.arena.h)
         self.observation_space = gym.spaces.box.Box(
             low=-1.0, high=1.0, shape=(2, image_size, image_size, 4), dtype=np.float64)
         self.action_space = gym.spaces.box.Box(
@@ -95,15 +98,16 @@ class PredPreyEnv():
         self.prey_condition = prey_condition
         self.normalize = False
         
-    def reset(self):
+    def reset(self, min_dif = 0, max_dif = 100, energy = 3000):
         self.close()
         self.resets += 1
-        self.pred, self.prey, self.pos_pred, self.pos_prey, self.yaw_pred, self.yaw_prey, self.speed_pred, self.speed_prey, wall_ids = \
-            start_arena(self.test, self.physicsClient, self.arena_name, self.already_constructed)
+        (self.pred, self.pos_pred, self.yaw_pred, self.speed_pred),\
+        (self.prey, self.pos_prey, self.yaw_prey, self.speed_prey), wall_ids = self.arena.start_arena(
+            self.physicsClient, self.already_constructed, min_dif, max_dif, min_speed)
         if(self.already_constructed == False): self.wall_ids = wall_ids
         self.already_constructed = True
         self.steps = 0
-        self.pred_energy, self.prey_energy = 3000, 3000
+        self.pred_energy, self.prey_energy = energy, energy
         return(self.get_obs())
 
     def agent_dist(self):
@@ -244,9 +248,9 @@ class PredPreyEnv():
             plt.figure(figsize = (5,5))
             plt.imshow(rgb)
             plt.axis('off')
-            os.chdir(file_1)
+            #os.chdir(file_1)
             #plt.savefig('images/{}.png'.format(name), bbox_inches='tight', pad_inches = 0)
-            os.chdir(file_2)
+            #os.chdir(file_2)
             plt.show()
             plt.close()
             plt.ioff()
@@ -292,7 +296,7 @@ class PredPreyEnv():
             p.removeBody(self.prey, physicsClientId = self.physicsClient)
         if(self.resets == 100 and self.GUI):
             p.disconnect(self.physicsClient)
-            self.physicsClient = get_physics(True, name = self.arena_name) 
+            self.physicsClient = get_physics(self.GUI, self.arena.w, self.arena.h)
         if(forever):
             p.disconnect(self.physicsClient)
             indexes.append(self.index)
@@ -306,8 +310,8 @@ from tqdm import tqdm
 
 
 
-def run_with_GUI(test = False, pred = None, prey = None, GUI = True, episodes = 100, pred_condition = False, prey_condition = False, arena_name = "arena.png", render = False):
-    env = PredPreyEnv(test = test, GUI = GUI, pred_condition = pred_condition, prey_condition = prey_condition, arena_name = arena_name)
+def run_with_GUI(min_dif = 0, max_dif = 100, energy = 3000, pred = None, prey = None, GUI = True, episodes = 100, pred_condition = False, prey_condition = False, arena_name = "arena.png", render = False):
+    env = PredPreyEnv(GUI = GUI, pred_condition = pred_condition, prey_condition = prey_condition, arena_name = arena_name)
     win_list = []
     if(pred != None): pred.eval()
     if(prey != None): prey.eval()
@@ -316,7 +320,7 @@ def run_with_GUI(test = False, pred = None, prey = None, GUI = True, episodes = 
         pred_actor_hc, prey_actor_hc = None, None
         ang_speed_1, ang_speed_2 = None, None
         steps = 0
-        obs = env.reset()  
+        obs = env.reset(min_dif, max_dif, energy)  
         while(done == False):
             steps += 1
             if(pred != None):

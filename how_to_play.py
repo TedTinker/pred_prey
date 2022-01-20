@@ -3,12 +3,8 @@ import os
 
 file = r"C:\Users\tedjt\Desktop\pred_prey"
 os.chdir(file) 
-from arena import rgbd_input, too_close
-from pred_prey_env import PredPreyEnv, run_with_GUI
+from pred_prey_env import rgbd_input, too_close, PredPreyEnv, run_with_GUI
 
-from itertools import product
-all_env_params = [_ for _ in product((False, "pred", "prey"), (False, "random", "pin"), (False, "random", "pin"))]
-env_dict = {(test, pred_condition, prey_condition) : PredPreyEnv(GUI = False, test = test, pred_condition = pred_condition, prey_condition = prey_condition, arena_name = "empty_arena.png") for test, pred_condition, prey_condition in all_env_params}
 
 def add_discount(rewards, last, GAMMA = .9):
     discounts = [last * (GAMMA**i) for i in range(len(rewards))]
@@ -21,14 +17,13 @@ def add_discount(rewards, last, GAMMA = .9):
 def episode(
         pred, prey, 
         GUI = False, 
-        train = "both", test = False, 
+        min_dif = 0, max_dif = 100, energy = 3000,
         pred_condition = False, prey_condition = False, 
         arena_name = "empty_arena.png", 
         pred_exploration = 0, prey_exploration = 0):
     
-    if(GUI):    env = PredPreyEnv(GUI = True, test = test, pred_condition = pred_condition, prey_condition = prey_condition, arena_name = arena_name)
-    else:       env = env_dict[(test, pred_condition, prey_condition)]
-    obs = env.reset()  
+    env = PredPreyEnv(GUI = GUI, pred_condition = pred_condition, prey_condition = prey_condition, arena_name = arena_name)
+    obs = env.reset(min_dif, max_dif, energy)  
     pred.train(), prey.train()
     done = False
     pred_hc, prey_hc  = None, None
@@ -61,7 +56,7 @@ def episode(
             pred_hc  = new_pred_hc
             prey_hc  = new_prey_hc
         
-    env.close(forever = GUI)
+    env.close(forever = True)
     win = dist_after < too_close
     
     r=1

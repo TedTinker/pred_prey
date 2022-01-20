@@ -1,141 +1,113 @@
-### How to get arena from image
-import numpy as np
-import cv2
-from itertools import product
-from math import pi, sin, cos
-
-file_1 = r"C:\Users\tedjt\Desktop\pred_prey"
-import os
-os.chdir(file_1)
-from utils import file_2
-
-
-
-
-def get_arena(arena_name = "arena.png"):
-
-    # Get PNG image.
-    os.chdir(file_1) 
-    arena = cv2.imread("arenas/" + arena_name)
-    os.chdir(file_2) 
-    w,h,_ = arena.shape
-    
-    # Totally white (255, 255, 255) pixels are open space. 
-    open_spots = [(x,y) for x, y in product(range(w), range(h)) if arena[x,y].tolist() == [255, 255, 255]]
-    
-    # Starting close to the prey is easy for the predator.
-    # Starting far from the predator is easy for the prey. 
-    distances = []
-    open_spot_combinations = [(spot_1, spot_2) for spot_1, spot_2 in product(open_spots, open_spots) if spot_1 != spot_2]
-    for spot_1, spot_2 in open_spot_combinations:
-        x, y = spot_1[0] - spot_2[0], spot_1[1] - spot_2[1]
-        distances.append((x**2 + y**2)**.5)
-    hard_dist_for_pred = np.percentile([d for d in distances if d != 0], 75)
-    hard_dist_for_prey = np.percentile([d for d in distances if d != 0], 33)
-    hard_spot_pairs_for_pred, hard_spot_pairs_for_prey = [], []
-    for (spot_1, spot_2), dist in zip(open_spot_combinations, distances):
-        if dist > hard_dist_for_pred:
-            hard_spot_pairs_for_pred.append((spot_1, spot_2))
-        if dist < hard_dist_for_prey and spot_1 != spot_2:
-            hard_spot_pairs_for_prey.append((spot_1, spot_2))
-            
-    return(arena, open_spots, hard_spot_pairs_for_pred, hard_spot_pairs_for_prey, w, h)
-
-
-
-
-    
-    
-    
-### How to make arena in pybullet and place agents
-
-agent_size = .5             # How big are agents?
-image_size = 16             # How big are agent observations?
-rgbd_input = (image_size, image_size, 4)
-min_speed = 10
-max_speed = 40           # Maximum speed?
-max_speed_change = 10    # How much can an agent change speed?
-max_angle_change = pi / 2   # How much can an agent change angle?
-too_close = .6              # How close must the predator be to win?
-
+# How to make physicsClients.
 import pybullet as p
 import pybullet_data
 
-# Return a physics client. If using GUI, move camera above arena looking down. 
-def get_physics(GUI = False, name = "arena.png"):
-    if(GUI):
-        _, _, _, _, w, h = get_arena(name)
-        physicsClient = p.connect(p.GUI)
-        p.resetDebugVisualizerCamera(1,90,-89,(w/2,h/2,w), physicsClientId = physicsClient)
-    else:   physicsClient = p.connect(p.DIRECT)
-    p.setAdditionalSearchPath(pybullet_data.getDataPath(), physicsClientId = physicsClient)
-    return(physicsClient)
+def get_physics(GUI, w, h):
+  if(GUI):
+    physicsClient = p.connect(p.GUI)
+    p.resetDebugVisualizerCamera(1,90,-89,(w/2,h/2,w), physicsClientId = physicsClient)
+  else:   
+    physicsClient = p.connect(p.DIRECT)
+  p.setAdditionalSearchPath(pybullet_data.getDataPath(), physicsClientId = physicsClient)
+  return(physicsClient)
 
-# We place agents at the center of arena-spots. Wiggle them around a little. 
+
+
+# Get arena from image.
+import numpy as np
+from math import pi, sin, cos
+import cv2
+from itertools import product
+from scipy.stats import percentileofscore
 import random
-def wiggle(x, y):
-    #x_, y_ = random.uniform(-agent_size/2, agent_size/2), random.uniform(-agent_size/2, agent_size/2)
-    #x += x_; y += y_
-    return([x, y, .5])
+import os
 
-# Make arena! 
-def start_arena(test = False, physicsClient = 0, arena_name = "arena.png", already_constructed = False):
-    arena, open_spots, hard_spot_pairs_for_pred, hard_spot_pairs_for_prey, w, h = get_arena(arena_name)
-    wall_ids = []
-    # Construct with cubes the same color as the image-pixels.
-    if(not already_constructed):
-        for loc in ((x,y) for x in range(w) for y in range(h)):
-            if(not (arena[loc] == [255]).all()):
-                pos = [loc[0],loc[1],.5]
-                ors = p.getQuaternionFromEuler([0,0,0])
-                cube = p.loadURDF("cube.urdf",pos,ors, useFixedBase = True, physicsClientId = physicsClient)
-                color = arena[loc][::-1] / 255
-                color = np.append(color, 1)
-                p.changeVisualShape(cube, -1, rgbaColor=color, physicsClientId = physicsClient)
-                wall_ids.append(cube)
-                
-    # Pick random positions and angles for pred, prey. 
-    if(  test == "pred"):   pos_pred, pos_prey = random.sample(hard_spot_pairs_for_pred,1)[0]
-    elif(test == "prey"):   pos_pred, pos_prey = random.sample(hard_spot_pairs_for_prey,1)[0]
-    else:                   pos_pred, pos_prey = random.sample(open_spots,2)
-    yaw_pred, yaw_prey = random.uniform(0, 2*pi), random.uniform(0, 2*pi)
-    speed_pred, speed_prey  = random.uniform(min_speed,max_speed), random.uniform(min_speed,max_speed)
-    
+def pythagorean(pos_1, pos_2):
+  return ((pos_1[0] - pos_2[0])**2 + (pos_1[1] - pos_2[1])**2)**.5
+
+class Arena():
+  def __init__(self, arena_name,
+               agent_size = .5):
+    self.arena_name = arena_name
+    file_1 = r"C:\Users\tedjt\Desktop\pred_prey"
     os.chdir(file_1)
+    self.arena = cv2.imread("arenas/" + arena_name); self.w, self.h, _ = self.arena.shape
+    file_2 = r"C:\Users\tedjt"
+    #os.chdir(file_2)
+    self.agent_size = agent_size
+    self.open_spots = [(x,y) for x, y in product(range(self.w), range(self.h)) \
+                      if self.arena[x,y].tolist() == [255, 255, 255]]
+    num_open_spots = range(len(self.open_spots))
+    self.pairs = [(self.open_spots[i], self.open_spots[j]) for \
+                  i, j in product(num_open_spots, num_open_spots) if i != j]
+    distances = [pythagorean(self.pairs[i][0], self.pairs[i][1]) for \
+                  i in range(len(self.pairs))]
+    self.difficulties = [percentileofscore(distances, d) for d in distances]
+  
+  def get_pair_with_difficulty(self, min_dif = None, max_dif = None):
+    if(min_dif == None): min_dif = 0; max_dif = 100
+    if(max_dif == None): max_dif = min_dif
+    if(min_dif > max_dif): min_dif = max_dif
+    pair_list = []
+    while(len(pair_list) == 0):
+      pair_list = [self.pairs[i] for i in range(len(self.pairs)) if \
+                  self.difficulties[i] >= min_dif and self.difficulties[i] <= max_dif]
+      min_dif -= 1; max_dif += 1
+    return(random.choice(pair_list))
+
+  def start_arena(
+    self, physicsClient, already_constructed = False,
+    min_dif = None, max_dif = None, start_speed = 0):
+    
+    wall_ids = []
+    if(not already_constructed):
+      for loc in ((x,y) for x in range(self.w) for y in range(self.h)):
+        if(not (self.arena[loc] == [255]).all()):
+          pos = [loc[0],loc[1],.5]
+          ors = p.getQuaternionFromEuler([0,0,0])
+          cube = p.loadURDF("cube.urdf",pos,ors, useFixedBase = True, physicsClientId = physicsClient)
+          color = self.arena[loc][::-1] / 255
+          color = np.append(color, 1)
+          p.changeVisualShape(cube, -1, rgbaColor=color, physicsClientId = physicsClient)
+          wall_ids.append(cube)
+                
+    pred_pos, prey_pos = self.get_pair_with_difficulty(min_dif, max_dif)
+    pred_yaw, prey_yaw = random.uniform(0, 2*pi), random.uniform(0, 2*pi)
+    pred_spe, prey_spe = start_speed, start_speed
+    
     file = "sphere2red.urdf"
     #file = "pred_prey.urdf" # How can I make my own robot-shape? 
     
-    # Place pred.
-    pos = wiggle(pos_pred[0], pos_pred[1])
-    ors = p.getQuaternionFromEuler([0,0,yaw_pred])
-    pred = p.loadURDF(file,pos,ors,globalScaling = agent_size, physicsClientId = physicsClient)
-    x, y = cos(yaw_pred)*speed_pred, sin(yaw_pred)*speed_pred
+    pos = (pred_pos[0], pred_pos[1], .5)
+    ors = p.getQuaternionFromEuler([0,0,pred_yaw])
+    pred = p.loadURDF(file,pos,ors,globalScaling = self.agent_size, physicsClientId = physicsClient)
+    x, y = cos(pred_yaw)*pred_spe, sin(pred_yaw)*pred_spe
     p.resetBaseVelocity(pred, (x,y,0),(0,0,0), physicsClientId = physicsClient)
     p.changeVisualShape(pred, -1, rgbaColor = [1,0,0,1], physicsClientId = physicsClient)
     
-    # Place prey.
-    pos = wiggle(pos_prey[0], pos_prey[1])
-    ors = p.getQuaternionFromEuler([0,0,yaw_prey])
-    prey = p.loadURDF(file,pos,ors,globalScaling = agent_size, physicsClientId = physicsClient)
-    x, y = cos(yaw_prey)*speed_prey, sin(yaw_prey)*speed_prey
+    pos = (prey_pos[0], prey_pos[1], .5)
+    ors = p.getQuaternionFromEuler([0,0,prey_yaw])
+    prey = p.loadURDF(file,pos,ors,globalScaling = self.agent_size, physicsClientId = physicsClient)
+    x, y = cos(prey_yaw)*prey_spe, sin(prey_yaw)*prey_spe
     p.resetBaseVelocity(prey, (x,y,0),(0,0,0), physicsClientId = physicsClient)
     p.changeVisualShape(prey, -1, rgbaColor = [0,0,1,1], physicsClientId = physicsClient)
     
-    os.chdir(file_2)
-    return(pred, prey, pos_pred, pos_prey, yaw_pred, yaw_prey, speed_pred, speed_prey, wall_ids)
-
+    return((pred, pred_pos, pred_yaw, pred_spe),
+           (prey, prey_pos, prey_yaw, prey_spe), wall_ids)
 
 
 
 if __name__ == "__main__":
-    arena, open_spots, hard_spot_pairs_for_pred, hard_spot_pairs_for_prey, w, h = get_arena(arena_name = "empty_arena.png")
-    print("\nArena shape:", arena.shape)
-    print("\nOpen spots:")
-    for spot in open_spots:
-        print("\t", spot)
-    print("\nHard spots for pred:")
-    for spots in hard_spot_pairs_for_pred:
-        print("\t", spots)
-    print("\nHard spots for prey:")
-    for spots in hard_spot_pairs_for_prey:
-        print("\t", spots)
+  import os
+  file_1 = r"C:\Users\tedjt\Desktop\pred_prey"
+  os.chdir(file_1)
+  arena = Arena("empty_arena.png")
+  print("Open spots:")
+  for s in arena.open_spots:
+    print(s)
+  print("A pred/prey starting position easy for predator:")
+  for s in arena.get_pair_with_difficulty(0,0):
+    print(s)
+  print("A pred/prey starting positions hard for predator:")
+  for s in arena.get_pair_with_difficulty(100,100):
+    print(s)
