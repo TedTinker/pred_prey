@@ -70,7 +70,7 @@ def empty_folder(folder):
   os.chdir(file_1)
   files = os.listdir("saves")
   if(folder not in files): return
-  shutil.rmtree("saves/folder")
+  shutil.rmtree("saves/" + folder)
   #os.chdir(file_2)
 
 def make_folder(folder):
@@ -111,7 +111,7 @@ def plot_rewards(rewards, name = None, folder = "default"):
   
   
 # How to plot losses.
-def plot_losses(losses, too_long = 300, name = None, folder = "default"):
+def plot_losses(losses, too_long = None, name = None, folder = "default"):
   total_length = len(losses)
   x = [i for i in range(1, total_length + 1)]
   if(too_long != None and total_length > too_long):

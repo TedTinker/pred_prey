@@ -36,26 +36,16 @@ from itertools import product
 # How are agents rewarded/punished each step? 
 dist_d      = .1     # Based on distance
 closer_d    = 10     # Based on distance closer
-speed_d       = 0     # Based on speed
-step_d      = 0     # Based on how many steps have passed
 col_d       = .1     # Based on collision with walls
-win_lose    = 0     # Based on predator victory
 
-def get_reward(agent, dist, closer, speed, step, collision, done, printing = False):
-    try: speed = speed.item() 
-    except: pass
+def get_reward(agent, dist, closer, collision, printing = False):
     r_dist = (1/dist - .7) * dist_d if agent == "pred" else (-1/dist + .7) * dist_d
     r_closer = closer * closer_d if agent == "pred" else -closer * closer_d
-    r_speed    = speed * speed_d
-    r_step   = -step * step_d if agent == "pred" else step * step_d
     r_col    = -col_d if collision else 0
-    r = r_dist + r_closer + r_speed + r_step + r_col
-    if(done):
-        if(dist <= too_close): r += win_lose if agent == "pred" else 0# -win_lose
-        else:                  r += win_lose if agent == "prey" else 0# -win_lose 
+    r = r_dist + r_closer + r_col
     if(printing):
-        print("\n{} reward {}:\n\t{} from dist,\n\t{} from dist closer,\n\t{} from speed,\n\t{} from step,\n\t{} from collision.".format(
-            agent, round(r,3), round(r_dist,3), round(r_closer,3), round(r_speed,3), round(r_step, 3), round(r_col, 3)))
+        print("\n{} reward {}:\n\t{} from dist,\n\t{} from dist closer,\n\t{} from collision.".format(
+            agent, round(r,3), round(r_dist,3), round(r_closer,3), round(r_col, 3)))
     return(r)
 
 def add_discount(rewards, last, GAMMA = .9):
@@ -229,8 +219,8 @@ class PredPreyEnv():
         self.prey_energy -= self.speed_prey+5
         done = True if dist_after <= too_close or self.pred_energy <= 0 else False
         reward = (
-            get_reward("pred", dist_after, dist_closer, self.speed_pred, self.steps, pred_collision, done), 
-            get_reward("prey", dist_after, dist_closer, self.speed_prey, self.steps, prey_collision, done))
+            get_reward("pred", dist_after, dist_closer, pred_collision), 
+            get_reward("prey", dist_after, dist_closer, prey_collision))
         #if(done): print("\n\n\tEnded!\n\n")
         observations = self.get_obs(agent = "both")
         return(observations, reward, done, dist_after)

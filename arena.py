@@ -2,6 +2,8 @@
 import pybullet as p
 import pybullet_data
 
+
+
 def get_physics(GUI, w, h):
   if(GUI):
     physicsClient = p.connect(p.GUI)
