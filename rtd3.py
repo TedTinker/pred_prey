@@ -456,7 +456,7 @@ class RecurrentTD3(RecurrentOffPolicyRLAlgorithm):
       
   def act(self, state, speed, energy, action, hc, condition = 0):
     summary, hc = self.actor_summarizer(state, speed, energy, action, hc, return_hidden=True)
-    action = self.actor(summary)
+    action = self.actor(summary).cpu()
     if(condition == "pin"):
       action = torch.tensor([-1,-1])
     elif(condition == "random" or random.uniform(0,1) < condition):
