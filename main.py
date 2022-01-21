@@ -90,8 +90,8 @@ def train(arena_name = "empty_arena.png", folder = "default"):
             if(keyboard.is_pressed('q')):
                 plot_rewards(rewards)
             
-            pred_losses = pred.update_networks(batch_size = 16, iterations = 4)
-            #prey_losses = prey.update_networks(batch_size = 16, iterations = 4)
+            pred_losses = pred.update_networks(batch_size = 32, iterations = 4)
+            #prey_losses = prey.update_networks(batch_size = 32, iterations = 4)
             losses = np.concatenate([losses, np.concatenate([pred_losses, pred_losses], axis = 1)])
             if(keyboard.is_pressed('q')):
                 print("Explorations:", explorations)

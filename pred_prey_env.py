@@ -169,10 +169,8 @@ class PredPreyEnv():
         return(rgbd)
     
     def unnormalize(self, action): # from (-1, 1) to (min, max)
-      yaw = action[0] * max_angle_change
-      yaw = sorted((-max_angle_change, max_angle_change, yaw))[1]
-      spe = min_speed + ((action[1] + 1)/2) * (max_speed - min_speed)
-      spe = sorted((min_speed, max_speed, spe))[1] 
+      yaw = action[0].clip(-1,1) * max_angle_change
+      spe = min_speed + ((action[1].clip(-1,1) + 1)/2) * (max_speed - min_speed)
       return(yaw, spe)
     
     def step(self, ang_speed_1, ang_speed_2):
@@ -295,11 +293,11 @@ def run_with_GUI(
         while(done == False):
             steps += 1
             if(pred != None):
-                ang_speed_1, pred_actor_hc = pred.act(obs[0], env.speed_pred, env.pred_energy, ang_speed_1, pred_actor_hc)
+                ang_speed_1, pred_actor_hc = pred.act(obs[0], env.speed_pred, env.pred_energy, ang_speed_1, pred_actor_hc, pred_condition)
             else:
                 ang_speed_1 = (-1, -1)
             if(prey != None):
-                ang_speed_2, prey_actor_hc = prey.act(obs[1], env.speed_prey, env.prey_energy, ang_speed_2, prey_actor_hc)
+                ang_speed_2, prey_actor_hc = prey.act(obs[1], env.speed_prey, env.prey_energy, ang_speed_2, prey_actor_hc, prey_condition)
             else:
                 ang_speed_2 = (-1, -1)
             obs, _, done, dist_after = env.step(ang_speed_1, ang_speed_2)

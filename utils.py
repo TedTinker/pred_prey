@@ -116,8 +116,6 @@ def plot_losses(losses, too_long = None, name = None, folder = "default"):
   x = [i for i in range(1, total_length + 1)]
   if(too_long != None and total_length > too_long):
     x = x[-too_long:]; losses = losses[-too_long:]
-  print(len(losses))
-  print(len(losses[-1]))
 
   actor_x  = [x_ for i, x_ in enumerate(x) if losses[i][0] != None]
   pred_actor_y = [l[0] for l in losses if l[0] != None]

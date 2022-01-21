@@ -53,7 +53,7 @@ class RecurrentReplayBuffer:
   
     # placeholders
 
-    capacity = 500
+    capacity = 1000
 
     self.o = np.zeros((capacity, max_episode_len + 1) + o_dim)
     self.s = np.zeros((capacity, max_episode_len + 1, 1))
