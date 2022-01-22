@@ -1,23 +1,15 @@
 import os
 os.environ["KMP_DUPLICATE_LIB_OK"]="TRUE"
 
-import torch
 import numpy as np
-from torch.distributions import Normal
-import torch.nn.functional as f
-import random
 from tqdm import tqdm
-import matplotlib.pyplot as plt
-from math import degrees
-from copy import deepcopy
 import keyboard
 
 file = r"C:\Users\tedjt\Desktop\pred_prey"
 os.chdir(file) 
-from utils import file_1, file_2, device, get_free_mem, delete_these, \
-    duration, save_plot, plot_wins, plot_losses, plot_rewards, \
+from utils import delete_these, get_rolling_average, \
+    duration, reset_start_time, empty_folder, make_folder, plot_wins, plot_losses, plot_rewards, \
     save_pred_prey, load_pred_prey
-from pred_prey_env import PredPreyEnv, run_with_GUI, rgbd_input, too_close
 from how_to_play import episode
 from rtd3 import RecurrentTD3
 #os.chdir(r"C:\Users\tedjt")
@@ -25,119 +17,124 @@ from rtd3 import RecurrentTD3
 
 
 
-
-max_len = 300
-per_epoch = 33
-
-
-
   
-def get_rolling_average(wins, roll = 100):
-  if(len(wins) < roll):
-    return(sum(wins)/len(wins))
-  return(sum(wins[-roll:])/roll)
 
 
-def train(arena_name = "empty_arena.png", folder = "default"):
+class Trainer():
+    def __init__(
+            self, arena_name, energy = 3000,
+            pred_condition = 0, prey_condition = 0, folder = "default"):
+        self.attempts = 0
+        self.arena_name = arena_name
+        self.folder = folder
+        self.energy = energy
+        self.pred_condition, self.start_pred_condition = pred_condition, pred_condition
+        self.prey_condition, self.start_prey_condition = prey_condition, prey_condition
+        self.restart()
     
-    pred = RecurrentTD3()
-    prey = RecurrentTD3()
+    def restart(self):
+      reset_start_time()
+      empty_folder(self.folder)
+      make_folder(self.folder)
+      self.attempts += 1
+      self.e = 0
+      self.pred = RecurrentTD3()
+      self.prey = RecurrentTD3()
+      save_pred_prey(self.pred, self.prey, post = "_0", folder = self.folder)
+      self.pred_condition = self.start_pred_condition
+      self.prey_condition = self.start_prey_condition
+      self.easy_wins = []
+      self.med_wins = []
+      self.hard_wins = []
+      self.easy_wins_rolled = []
+      self.med_wins_rolled = []
+      self.hard_wins_rolled = []
+      self.losses = np.array([[None, None, None, None, None, None]])
+      
+    def one_episode(self, difficulty = "med"):
+      if(difficulty == "easy"): min_dif = 0; max_dif = 0
+      if(difficulty == "med"):  min_dif = 0; max_dif = 100
+      if(difficulty == "hard"): min_dif = 100; max_dif = 100
+      pred_win, rewards = episode(
+          self.pred, self.prey, 
+          GUI = keyboard.is_pressed('q') ,
+          min_dif = min_dif, max_dif = max_dif, energy = self.energy,
+          pred_condition = self.pred_condition, prey_condition = self.prey_condition, 
+          arena_name = self.arena_name)
+      return(int(pred_win), rewards)
+
+
+    def epoch(self):
+      win, rewards = self.one_episode("easy")
+      self.easy_wins.append(win)
+      self.easy_wins_rolled.append(get_rolling_average(self.easy_wins))
+      if(keyboard.is_pressed('q') ): plot_rewards(rewards)
     
-    e = 0
+      win, rewards = self.one_episode("med")
+      self.med_wins.append(win)
+      self.med_wins_rolled.append(get_rolling_average(self.med_wins))
     
-    win_easy = []
-    win_med = []
-    win_hard= []
-    win_easy_rolled = []
-    win_med_rolled = []
-    win_hard_rolled = []
-    losses = np.array([[None, None, None, None, None, None]])
+      win, rewards = self.one_episode("hard")
+      self.hard_wins.append(win)
+      self.hard_wins_rolled.append(get_rolling_average(self.hard_wins))
     
-    starting_explorations = 1, 1
-    explorations = starting_explorations
-    
-    while(e <= 100):
-        e += 1
+      if(type(self.pred_condition) in [int, float]):
+          self.pred_condition *= .99
+      if(type(self.prey_condition) in [int, float]):
+          self.prey_condition *= .99
+      
+      iterations = 4
+      pred_losses = self.pred.update_networks(batch_size = 32, iterations = iterations)
+      #prey_losses = self.prey.update_networks(batch_size = 32, iterations = iterations)
+      if(iterations == 1): 
+          pred_losses = np.expand_dims(pred_losses,0)#; prey_losses = np.expand_dims(prey_losses,0)
+      self.losses = np.concatenate([self.losses, np.concatenate([pred_losses, pred_losses], axis = 1)])
+
+
+
+    def train(
+            self, 
+            max_epochs = 1000,
+            restarts = ((500, .1, .1, .1), (1000, .5, .3, .2)),
+            done = ("pred", .99, .99, .95)):
         
-        print()
-        print("Explorations:", explorations)
-        for i in tqdm(range(per_epoch), "Epoch {}".format(e)):
-            explorations = explorations[0]*.99, explorations[1]*.99
-            win, rewards = episode(pred = pred, prey = prey,
-                                  GUI = keyboard.is_pressed('q'), 
-                                  min_dif = 0, max_dif = 0, energy = 3000,
-                                  pred_condition = explorations[0], prey_condition = "pin", arena_name = arena_name)
-            win_easy.append(win)
-            win_easy_rolled.append(get_rolling_average(win_easy))
-            if(keyboard.is_pressed('q')):
-                plot_rewards(rewards)
-            
-            win, rewards = episode(pred = pred, prey = prey,
-                                  GUI = keyboard.is_pressed('q'), 
-                                  min_dif = 0, max_dif = 100, energy = 3000,
-                                  pred_condition = explorations[0], prey_condition = "pin", arena_name = arena_name)
-            win_med.append(win)
-            win_med_rolled.append(get_rolling_average(win_med))
-            if(keyboard.is_pressed('q')):
-                plot_rewards(rewards)
+        self.pred.train(); self.prey.train()
+        while(self.e < max_epochs):
+            self.e += 1
+            if(self.e % 5 == 0): print("Epoch {}, {} attempt(s). {}.".format(self.e, self.attempts, duration()))
+            if(self.e % 25 == 0): print(self.pred_condition, self.prey_condition)
+            self.epoch()
+            if(self.e % 25 == 0): 
+                plot_wins(self.easy_wins_rolled, self.med_wins_rolled, self.hard_wins_rolled, name = "wins_{}.png".format(self.e))
+                plot_losses(self.losses, too_long = 300, name = "losses_{}.png".format(self.e))
+                save_pred_prey(self.pred, self.prey, post = "_{}".format(self.e), folder = self.folder)
+            for r in restarts:
+                if(self.e >= r[0]):
+                    if(self.easy_wins_rolled[-1] < r[1] or
+                       self.med_wins_rolled[-1]  < r[2] or
+                       self.hard_wins_rolled[-1] < r[3]):
+                        print("This isn't working. Starting again!")
+                        delete_these(True, self.pred, self.prey, self.easy_wins, self.med_wins, self.hard_wins,
+                           self.easy_wins_rolled, self.med_wins_rolled, self.hard_wins_rolled, self.losses)
+                        self.restart()
+            if(self.e > 100):
+                if(done[0] == "pred"):
+                    if(self.easy_wins_rolled[-1] >= done[1] and
+                       self.med_wins_rolled[-1] >= done[2] and
+                       self.hard_wins_rolled[-1] >= done[3]):
+                        plot_wins(self.easy_wins_rolled, self.med_wins_rolled, self.hard_wins_rolled, name = "wins_last.png".format(self.e))
+                        plot_losses(self.losses, too_long = None, name = "losses_last.png".format(self.e))
+                        break
     
-            win, rewards = episode(pred = pred, prey = prey,
-                                  GUI = keyboard.is_pressed('q'), 
-                                  min_dif = 100, max_dif = 100, energy = 3000,
-                                  pred_condition = explorations[0], prey_condition = "pin", arena_name = arena_name)
-            win_hard.append(win)
-            win_hard_rolled.append(get_rolling_average(win_hard))
-            if(keyboard.is_pressed('q')):
-                plot_rewards(rewards)
-            
-            pred_losses = pred.update_networks(batch_size = 32, iterations = 4)
-            #prey_losses = prey.update_networks(batch_size = 32, iterations = 4)
-            losses = np.concatenate([losses, np.concatenate([pred_losses, pred_losses], axis = 1)])
-            if(keyboard.is_pressed('q')):
-                print("Explorations:", explorations)
-                plot_losses(losses, 500)
-            
-        print("Total duration: {}.".format(duration()))
-        plot_wins(win_easy_rolled, win_med_rolled, win_hard_rolled, name = "wins_{}.png".format(e))
-        save_pred_prey(pred, prey, "_{}_epochs".format(e), folder)
-    
-        if(win_easy_rolled[-1] >= .9 and win_med_rolled[-1] >= .9 and win_hard_rolled[-1] >= .9): 
-            if(  explorations[0] > .05): pass
-            elif(explorations[0] > 0): explorations = 0, 0
-            else: plot_losses(losses); break
-        if(     (e >= 10 and win_hard_rolled[-1] < .1) or
-                (e >= 15 and win_hard_rolled[-1] < .2)):
-            print("\n\nNot great. Starting again!\n\n")
-            e = 0
-            explorations = starting_explorations
-            win_easy = []
-            win_med = []
-            win_hard= []
-            win_easy_rolled = []
-            win_med_rolled = []
-            win_hard_rolled = []
-            losses = np.array([[None, None, None, None, None, None]])
-            pred = RecurrentTD3()
-            prey = RecurrentTD3()
-            
-        save_pred_prey(pred, prey, "_{}_epochs".format(e), folder)
-        print()
-    
-    return(pred, prey)
-
-
-
-pred, prey = train()
-    
-    
-    
-    
-    
+    def test(self, size = 100):
+      self.pred.eval(); self.prey.eval()
+      pred_wins = 0
+      for i in range(size):
+          w, _ = self.one_episode(difficulty = "hard")
+          pred_wins += w
     
 
-
-run_with_GUI(
-    min_dif = 100, max_dif = 100, energy = 3000, arena_name = "empty_arena.png", episodes = 100, 
-    pred = pred, prey = prey, pred_condition = 0, prey_condition = "pin", 
-    GUI = True, render = False)
-
+# Train!
+trainer = Trainer("empty_arena.png", energy = 3000, pred_condition = 1, prey_condition = "pin")
+trainer.train()
+trainer.test()

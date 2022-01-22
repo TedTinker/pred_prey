@@ -61,6 +61,17 @@ def get_input(string, okay, default = None):
             
             
             
+            
+def get_rolling_average(wins, roll = 100):
+  if(len(wins) < roll):
+    return(sum(wins)/len(wins))
+  return(sum(wins[-roll:])/roll)       
+            
+            
+            
+            
+            
+            
 # How to save plots.
 import matplotlib.pyplot as plt
 import os
