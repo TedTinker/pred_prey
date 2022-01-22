@@ -105,8 +105,8 @@ class Trainer():
             if(self.e % 25 == 0): print(self.pred_condition, self.prey_condition)
             self.epoch()
             if(self.e % 25 == 0): 
-                plot_wins(self.easy_wins_rolled, self.med_wins_rolled, self.hard_wins_rolled, name = "wins_{}.png".format(self.e))
-                plot_losses(self.losses, too_long = 300, name = "losses_{}.png".format(self.e))
+                plot_wins(self.easy_wins_rolled, self.med_wins_rolled, self.hard_wins_rolled, name = "wins_{}".format(self.e))
+                plot_losses(self.losses, too_long = 300)
                 save_pred_prey(self.pred, self.prey, post = "_{}".format(self.e), folder = self.folder)
             for r in restarts:
                 if(self.e >= r[0]):
@@ -122,8 +122,8 @@ class Trainer():
                     if(self.easy_wins_rolled[-1] >= done[1] and
                        self.med_wins_rolled[-1] >= done[2] and
                        self.hard_wins_rolled[-1] >= done[3]):
-                        plot_wins(self.easy_wins_rolled, self.med_wins_rolled, self.hard_wins_rolled, name = "wins_last.png".format(self.e))
-                        plot_losses(self.losses, too_long = None, name = "losses_last.png".format(self.e))
+                        plot_wins(self.easy_wins_rolled, self.med_wins_rolled, self.hard_wins_rolled, name = "wins_last".format(self.e))
+                        plot_losses(self.losses, too_long = None, name = "losses".format(self.e))
                         break
     
     def test(self, size = 100):
@@ -135,6 +135,6 @@ class Trainer():
     
 
 # Train!
-trainer = Trainer("empty_arena.png", energy = 3000, pred_condition = 1, prey_condition = "pin")
+trainer = Trainer("empty_arena", energy = 3000, pred_condition = 1, prey_condition = "pin")
 trainer.train()
 trainer.test()

@@ -21,7 +21,6 @@ from copy import deepcopy
 file = r"C:\Users\tedjt\Desktop\pred_prey"
 os.chdir(file) 
 from utils import device, get_free_mem, delete_these
-from pred_prey_env import rgbd_input
 from basics.abstract_algorithms import RecurrentOffPolicyRLAlgorithm
 from basics.utils import get_device, create_target, mean_of_unmasked_elements, polyak_update, save_net, load_net
 

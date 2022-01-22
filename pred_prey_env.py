@@ -12,12 +12,7 @@ from utils import device, file_1, file_2, duration
 from arena import get_physics, Arena
 
 
-min_speed = 10
-max_speed = 40
-max_angle_change = pi/2
-too_close = .6
-image_size = 16
-rgbd_input = (16, 16, 4)
+
 
 
 
@@ -56,24 +51,28 @@ def add_discount(rewards, last, GAMMA = .9):
     #    print("{} + {} = {}".format(r, d, r+d))
     return([r + d for r, d in zip(rewards, discounts)])
 
-def include_steps(rewards, loss_per_step = .003, add = False):
-    steps = len(rewards)
-    if(add):
-        return([r + steps*loss_per_step for r in rewards])
-    return([r - steps*loss_per_step for r in rewards])
+
 
 # Made an environment! 
-indexes = [i for i in range(10000,0,-1)]
 class PredPreyEnv():   
     def __init__(
             self, 
-            GUI = False,                # Is it rendered on-screen?
-            arena_name = "arena.png"):
+            arena_name = "arena.png",
+            GUI = False,                
+            min_speed = 10,
+            max_speed = 40,
+            max_angle_change = pi/2,
+            too_close = .6,
+            image_size = 16):
+        
         self.arena_name = arena_name
         self.arena = Arena(self.arena_name)
-        self.already_constructed = False
-        self.index = indexes.pop()
         self.GUI = GUI
+        self.min_speed = min_speed; self.max_speed = max_speed
+        self.max_angle_change = max_angle_change; self.too_close = too_close
+        self.image_size = image_size; self.rgbd_shape = (image_size, image_size, 4)
+
+        self.already_constructed = False
         self.physicsClient = get_physics(self.GUI, self.arena.w, self.arena.h)
         self.observation_space = gym.spaces.box.Box(
             low=-1.0, high=1.0, shape=(2, image_size, image_size, 4), dtype=np.float64)
@@ -90,7 +89,7 @@ class PredPreyEnv():
         self.resets += 1
         (self.pred, self.pos_pred, self.yaw_pred, self.speed_pred),\
         (self.prey, self.pos_prey, self.yaw_prey, self.speed_prey), wall_ids = self.arena.start_arena(
-            self.physicsClient, self.already_constructed, min_dif, max_dif, min_speed)
+            self.physicsClient, self.already_constructed, min_dif, max_dif, self.min_speed)
         if(self.already_constructed == False): self.wall_ids = wall_ids
         self.already_constructed = True
         self.steps = 0
@@ -165,12 +164,12 @@ class PredPreyEnv():
         d = np.expand_dims(depth, axis=-1)
         rgbd = np.concatenate([rgb, d], axis = -1)
         rgbd = torch.from_numpy(rgbd).float()
-        rgbd = resize(rgbd.permute(-1,0,1), (image_size, image_size)).permute(1,2,0)
+        rgbd = resize(rgbd.permute(-1,0,1), (self.image_size, self.image_size)).permute(1,2,0)
         return(rgbd)
     
     def unnormalize(self, action): # from (-1, 1) to (min, max)
-      yaw = action[0].clip(-1,1) * max_angle_change
-      spe = min_speed + ((action[1].clip(-1,1) + 1)/2) * (max_speed - min_speed)
+      yaw = action[0].clip(-1,1) * self.max_angle_change
+      spe = self.min_speed + ((action[1].clip(-1,1) + 1)/2) * (self.max_speed - self.min_speed)
       return(yaw, spe)
     
     def step(self, ang_speed_1, ang_speed_2):
@@ -194,7 +193,7 @@ class PredPreyEnv():
         pred_collision, prey_collision = self.collisions()
         self.pred_energy -= self.speed_pred+5
         self.prey_energy -= self.speed_prey+5
-        done = True if dist_after <= too_close or self.pred_energy <= 0 else False
+        done = True if dist_after <= self.too_close or self.pred_energy <= 0 else False
         reward = (
             get_reward("pred", dist_after, dist_closer, pred_collision), 
             get_reward("prey", dist_after, dist_closer, prey_collision))
@@ -266,7 +265,6 @@ class PredPreyEnv():
             self.physicsClient = get_physics(self.GUI, self.arena.w, self.arena.h)
         if(forever):
             p.disconnect(self.physicsClient)
-            indexes.append(self.index)
     
 
     
@@ -297,13 +295,13 @@ def run_with_GUI(
             if(pred != None):
                 ang_speed_1, pred_actor_hc = pred.act(obs[0], env.speed_pred, env.pred_energy, ang_speed_1, pred_actor_hc, pred_condition)
             else:
-                ang_speed_1 = (-1, -1)
+                ang_speed_1 = torch.tensor([-1, -1])
             if(prey != None):
                 ang_speed_2, prey_actor_hc = prey.act(obs[1], env.speed_prey, env.prey_energy, ang_speed_2, prey_actor_hc, prey_condition)
             else:
-                ang_speed_2 = (-1, -1)
+                ang_speed_2 = torch.tensor([-1, -1])
             obs, _, done, dist_after = env.step(ang_speed_1, ang_speed_2)
-        win = dist_after < too_close
+        win = dist_after < env.too_close
         win_list.append(win)
     env.close(forever = True)
     win_percent = round(100*sum(win_list)/episodes)
@@ -319,11 +317,6 @@ if __name__ == "__main__":
     env = PredPreyEnv(arena_name = "big_arena.png")
     env.reset()   
     env.render() 
-    print("\nObservation space:")
-    print(env.observation_space.shape)
-    print("\nAction space:")
-    print(env.action_space.shape)
-    print()
     env.close(forever = True)
     run_with_GUI(episodes = 100, arena_name = "empty_arena.png", 
                  pred_condition = "pin", prey_condition = "pin",

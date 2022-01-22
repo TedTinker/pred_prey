@@ -3,7 +3,7 @@ import os
 
 file = r"C:\Users\tedjt\Desktop\pred_prey"
 os.chdir(file) 
-from pred_prey_env import rgbd_input, too_close, PredPreyEnv, run_with_GUI
+from pred_prey_env import PredPreyEnv, run_with_GUI
 
 
 def add_discount(rewards, last, GAMMA = .9):
@@ -54,9 +54,9 @@ def episode(
             obs = new_obs
             pred_hc  = new_pred_hc
             prey_hc  = new_prey_hc
-        
+            
+    win = dist_after < env.too_close
     env.close(forever = True)
-    win = dist_after < too_close
     
     r=1
     reward_list_pred = add_discount([p[4] for p in to_push_pred], r if win else -r)
