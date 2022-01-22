@@ -177,11 +177,12 @@ class PredPreyEnv():
         angle_1, speed_1 = self.unnormalize(ang_speed_1)
         angle_2, speed_2 = self.unnormalize(ang_speed_2)
         self.steps += 1
-        dist_before = self.agent_dist()
         self.change_angle_speed(self.pred, angle_1, speed_1)
         self.change_angle_speed(self.prey, angle_2, speed_2)
-        if(self.pred_energy <= 0): p.resetBaseVelocity(self.pred, (0,0,0), (0,0,0), physicsClientId = self.physicsClient); self.speed_pred = 0
-        if(self.prey_energy <= 0): p.resetBaseVelocity(self.prey, (0,0,0), (0,0,0), physicsClientId = self.physicsClient); self.speed_prey = 0
+        if(self.pred_energy <= 0): self.speed_pred = 0
+        if(self.prey_energy <= 0): self.speed_prey = 0
+        
+        dist_before = self.agent_dist()
         p.stepSimulation(physicsClientId = self.physicsClient)
         self.pos_pred, _ = p.getBasePositionAndOrientation(self.pred, physicsClientId = self.physicsClient)
         self.pos_prey, _ = p.getBasePositionAndOrientation(self.prey, physicsClientId = self.physicsClient)
@@ -189,6 +190,7 @@ class PredPreyEnv():
         self.speed_prey = self.get_speed(self.prey)
         dist_after = self.agent_dist()
         dist_closer = dist_before - dist_after
+        
         pred_collision, prey_collision = self.collisions()
         self.pred_energy -= self.speed_pred+5
         self.prey_energy -= self.speed_prey+5
