@@ -86,7 +86,7 @@ def make_folder(folder):
 def save_plot(name, folder = "default"):
   make_folder(folder)
   os.chdir(file_1)
-  plt.savefig("saves/"+folder+"/plots/"+name)
+  plt.savefig("saves/"+folder+"/plots/"+name+".png")
   #os.chdir(file_2)
   
   
