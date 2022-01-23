@@ -16,15 +16,14 @@ def episode(
         pred_condition = 0, prey_condition = 0, 
         arena_name = "empty_arena.png"):
     
-    env = PredPreyEnv(GUI = GUI, arena_name = arena_name)
-    obs = env.reset(min_dif, max_dif, energy)  
-    obs = torch.stack([obs[0][0], obs[1][0]])
     pred.train(), prey.train()
-    done = False
+    env = PredPreyEnv(GUI = GUI, arena_name = arena_name)
+    (pred_rgbd, pred_speed, pred_energy, pred_action), \
+    (prey_rgbd, prey_speed, prey_energy, prey_action) = env.reset(min_dif, max_dif, energy)  
     pred_hc, prey_hc  = None, None
     ang_speed_1, ang_speed_2 = None, None
-    reward_list = []
     to_push_pred, to_push_prey = [], []
+    done = False
     while(done == False):
         with torch.no_grad():
             pred_speed_before = env.pred_spe
@@ -32,23 +31,26 @@ def episode(
             prey_speed_before = env.prey_spe
             prey_energy_before = env.prey_energy
 
-            ang_speed_1, pred_hc = pred.act(obs[0], pred_speed_before, pred_energy_before, ang_speed_1, pred_hc, pred_condition)
-            ang_speed_2, prey_hc = prey.act(obs[1], prey_speed_before, prey_energy_before, ang_speed_2, prey_hc, prey_condition)
+            ang_speed_1, pred_hc = pred.act(pred_rgbd, pred_speed_before, pred_energy_before, ang_speed_1, pred_hc, pred_condition)
+            ang_speed_2, prey_hc = prey.act(prey_rgbd, prey_speed_before, prey_energy_before, ang_speed_2, prey_hc, prey_condition)
                 
             new_obs, (r_pred, r_prey), done, dist_after = env.step(ang_speed_1, ang_speed_2)
-            new_obs = torch.stack([new_obs[0][0], new_obs[1][0]])     
+            (new_pred_rgbd, new_pred_speed, new_pred_energy, new_pred_action), \
+            (new_prey_rgbd, new_prey_speed, new_prey_energy, new_prey_action) = new_obs  
             
             # o, s, e, a, r, no, ns, d, cutoff
             to_push_pred.append(
-                (obs[0], torch.tensor(pred_speed_before), torch.tensor(pred_energy_before), ang_speed_1.cpu(), r_pred, 
-                new_obs[0], torch.tensor(env.pred_spe), torch.tensor(env.pred_energy), torch.tensor(done).int(), torch.tensor(done)))
+                (pred_rgbd, torch.tensor(pred_speed_before), torch.tensor(pred_energy_before), ang_speed_1.cpu(), r_pred, 
+                new_pred_rgbd, torch.tensor(env.pred_spe), torch.tensor(env.pred_energy), torch.tensor(done).int(), torch.tensor(done)))
                 
             to_push_prey.append(
-                (obs[1], torch.tensor(prey_speed_before), torch.tensor(prey_energy_before), ang_speed_2.cpu(), r_prey, 
-                new_obs[1], torch.tensor(env.prey_spe), torch.tensor(env.prey_energy), torch.tensor(done), torch.tensor(done)))
+                (prey_rgbd, torch.tensor(prey_speed_before), torch.tensor(prey_energy_before), ang_speed_2.cpu(), r_prey, 
+                new_prey_rgbd, torch.tensor(env.prey_spe), torch.tensor(env.prey_energy), torch.tensor(done), torch.tensor(done)))
                 
-            reward_list.append((r_pred, r_prey))
-            obs = new_obs
+            (pred_rgbd, pred_speed, pred_energy, pred_action), \
+            (prey_rgbd, prey_speed, prey_energy, prey_action) = \
+              (new_pred_rgbd, new_pred_speed, new_pred_energy, new_pred_action), \
+              (new_prey_rgbd, new_prey_speed, new_prey_energy, new_prey_action)
     env.close(forever = True)
     win = dist_after < env.too_close
     
