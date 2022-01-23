@@ -135,6 +135,6 @@ class Trainer():
     
 
 # Train!
-trainer = Trainer("empty_arena", energy = 3000, pred_condition = 1, prey_condition = "pin")
+trainer = Trainer("empty_arena.png", energy = 3000, pred_condition = 1, prey_condition = "pin")
 trainer.train()
 trainer.test()
