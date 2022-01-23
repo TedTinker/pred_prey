@@ -7,7 +7,6 @@ from math import degrees, pi, cos, sin, sqrt
 import os
 file = r"C:\Users\tedjt\Desktop\pred_prey"
 os.chdir(file) 
-from utils import duration
 from arena import get_physics, Arena
 
 
@@ -88,6 +87,7 @@ class PredPreyEnv():
         self.already_constructed = True
         self.steps = 0
         self.pred_energy, self.prey_energy = energy, energy
+        self.pred_action, self.prey_action = torch.tensor([0,0]), torch.tensor([0,0])
         return(self.get_obs())
 
     def agent_dist(self):
@@ -132,34 +132,34 @@ class PredPreyEnv():
         return(sqrt(x**2 + y**2))
         
         
-    def get_obs(self, agent = "both"):
-        if(agent == "both"): return(self.get_obs(self.pred), self.get_obs(self.prey))
-        if(agent == self.pred): yaw, pos = self.pred_yaw, self.pred_pos
-        if(agent == self.prey): yaw, pos = self.prey_yaw, self.prey_pos
+    def get_obs(self, agent_name = "both"):
+      if(agent_name == "both"): return(self.get_obs("pred"), self.get_obs("prey"))
+      elif(agent_name == "pred"): 
+        yaw, pos = self.pred_yaw, self.pred_pos
+        speed, energy, action = self.pred_spe, self.pred_energy, self.pred_action
+      elif(agent_name == "prey"): 
+        yaw, pos = self.prey_yaw, self.prey_pos
+        speed, energy, action = self.prey_spe, self.prey_energy, self.prey_action
+      else: print("Not a good agent."); return
     
-        x, y = cos(yaw), sin(yaw)
-        view_matrix = p.computeViewMatrix(
-            cameraEyePosition = [pos[0], pos[1], .5], 
-            cameraTargetPosition = [pos[0] + x, pos[1] + y, .5], 
-            cameraUpVector = [0, 0, 1], physicsClientId = self.physicsClient
-        )
-        proj_matrix = p.computeProjectionMatrixFOV(
-            fov = 90, 
-            aspect = 1, 
-            nearVal = 0.2, 
-            farVal = 10, physicsClientId = self.physicsClient
-        )
-        _, _, rgba, depth, _ = p.getCameraImage(
-          width=128, height=128,
-          projectionMatrix=proj_matrix, viewMatrix=view_matrix, 
-          physicsClientId = self.physicsClient)
-        
-        rgb = np.divide(rgba[:,:,:-1], 255) * 2 - 1
-        d = np.expand_dims(depth, axis=-1)
-        rgbd = np.concatenate([rgb, d], axis = -1)
-        rgbd = torch.from_numpy(rgbd).float()
-        rgbd = resize(rgbd.permute(-1,0,1), (self.image_size, self.image_size)).permute(1,2,0)
-        return(rgbd)
+      x, y = cos(yaw), sin(yaw)
+      view_matrix = p.computeViewMatrix(
+        cameraEyePosition = [pos[0], pos[1], .5], 
+        cameraTargetPosition = [pos[0] + x, pos[1] + y, .5], 
+        cameraUpVector = [0, 0, 1], physicsClientId = self.physicsClient)
+      proj_matrix = p.computeProjectionMatrixFOV(
+        fov = 90, aspect = 1, nearVal = 0.2, 
+        farVal = 10, physicsClientId = self.physicsClient)
+      _, _, rgba, depth, _ = p.getCameraImage(
+        width=64, height=64,
+        projectionMatrix=proj_matrix, viewMatrix=view_matrix, 
+        physicsClientId = self.physicsClient)
+      rgb = np.divide(rgba[:,:,:-1], 255) * 2 - 1
+      d = np.expand_dims(depth, axis=-1)
+      rgbd = np.concatenate([rgb, d], axis = -1)
+      rgbd = torch.from_numpy(rgbd).float()
+      rgbd = resize(rgbd.permute(-1,0,1), (self.image_size, self.image_size)).permute(1,2,0)
+      return(rgbd, speed, energy, action)
     
     def unnormalize(self, action): # from (-1, 1) to (min, max)
       yaw = action[0].clip(-1,1) * self.max_angle_change
@@ -167,6 +167,7 @@ class PredPreyEnv():
       return(yaw, spe)
     
     def step(self, ang_speed_1, ang_speed_2):
+        self.pred_action, self.prey_action = ang_speed_1, ang_speed_2
         angle_1, speed_1 = self.unnormalize(ang_speed_1)
         angle_2, speed_2 = self.unnormalize(ang_speed_2)
         self.steps += 1
@@ -192,16 +193,16 @@ class PredPreyEnv():
             get_reward("pred", dist_after, dist_closer, pred_collision), 
             get_reward("prey", dist_after, dist_closer, prey_collision))
         #if(done): print("\n\n\tEnded!\n\n")
-        observations = self.get_obs(agent = "both")
+        observations = self.get_obs(agent_name = "both")
         return(observations, reward, done, dist_after)
     
-    def render(self, agent = "both", name = "image", save_folder = None):
-        if(agent == "both"): return(
-                self.render(self.pred, name + "_predator"), 
-                self.render(self.prey, name + "_prey"),
+    def render(self, agent_name = "both", name = "image", save_folder = None):
+        if(agent_name == "both"): return(
+                self.render("pred", name + "_predator"), 
+                self.render("prey", name + "_prey"),
                 self.render("above", name + "_above"))
-        if(agent != "above"):
-            rgbd = self.get_obs(agent)
+        if(agent_name != "above"):
+            rgbd, _, _, _ = self.get_obs(agent_name)
             rgb = rgbd[:,:,0:3]
             rgb = (rgb + 1)/2
             rgb = rgb.cpu()
@@ -268,41 +269,6 @@ from torch.distributions import Normal
 from tqdm import tqdm
 
 
-
-def run_with_GUI(
-        min_dif = 0, max_dif = 100, energy = 3000, arena_name = "arena.png", episodes = 100, 
-        pred = None, prey = None, pred_condition = 0, prey_condition = 0, 
-        GUI = True, render = False):
-    
-    env = PredPreyEnv(GUI = GUI, arena_name = arena_name)
-    win_list = []
-    if(pred != None): pred.eval()
-    if(prey != None): prey.eval()
-    for i in tqdm(range(episodes), desc = "Testing", position=0, leave=True):
-        done = False
-        pred_actor_hc, prey_actor_hc = None, None
-        ang_speed_1, ang_speed_2 = None, None
-        steps = 0
-        obs = env.reset(min_dif, max_dif, energy)  
-        while(done == False):
-            steps += 1
-            if(pred != None):
-                ang_speed_1, pred_actor_hc = pred.act(obs[0], env.pred_spe, env.pred_energy, ang_speed_1, pred_actor_hc, pred_condition)
-            else:
-                ang_speed_1 = torch.tensor([-1, -1])
-            if(prey != None):
-                ang_speed_2, prey_actor_hc = prey.act(obs[1], env.prey_spe, env.prey_energy, ang_speed_2, prey_actor_hc, prey_condition)
-            else:
-                ang_speed_2 = torch.tensor([-1, -1])
-            obs, _, done, dist_after = env.step(ang_speed_1, ang_speed_2)
-        win = dist_after < env.too_close
-        win_list.append(win)
-    env.close(forever = True)
-    win_percent = round(100*sum(win_list)/episodes)
-    print("\nWinning: {}%. Duration: {}.".format(win_percent, duration()))
-    return(win_percent)
-
-
     
     
     
@@ -312,6 +278,3 @@ if __name__ == "__main__":
     env.reset()   
     env.render() 
     env.close(forever = True)
-    run_with_GUI(episodes = 100, arena_name = "empty_arena.png", 
-                 pred_condition = "pin", prey_condition = "pin",
-                 render = False)

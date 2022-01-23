@@ -3,15 +3,10 @@ import os
 
 file = r"C:\Users\tedjt\Desktop\pred_prey"
 os.chdir(file) 
-from pred_prey_env import PredPreyEnv, run_with_GUI
+from pred_prey_env import PredPreyEnv, add_discount
 
 
-def add_discount(rewards, last, GAMMA = .9):
-    discounts = [last * (GAMMA**i) for i in range(len(rewards))]
-    discounts.reverse()
-    #for r, d in zip(rewards, discounts):
-    #    print("{} + {} = {}".format(r, d, r+d))
-    return([r + d for r, d in zip(rewards, discounts)])
+
 
 
 def episode(
@@ -23,6 +18,7 @@ def episode(
     
     env = PredPreyEnv(GUI = GUI, arena_name = arena_name)
     obs = env.reset(min_dif, max_dif, energy)  
+    obs = torch.stack([obs[0][0], obs[1][0]])
     pred.train(), prey.train()
     done = False
     pred_hc, prey_hc  = None, None
@@ -40,7 +36,8 @@ def episode(
             ang_speed_2, new_prey_hc = prey.act(obs[1], prey_speed_before, prey_energy_before, ang_speed_2, prey_hc, prey_condition)
                 
             new_obs, (r_pred, r_prey), done, dist_after = env.step(ang_speed_1, ang_speed_2)
-                        
+            new_obs = torch.stack([new_obs[0][0], new_obs[1][0]])            
+            
             # o, s, e, a, r, no, ns, d, cutoff
             to_push_pred.append(
                 (obs[0].cpu(), torch.tensor(pred_speed_before), torch.tensor(pred_energy_before), ang_speed_1.cpu(), r_pred, 

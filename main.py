@@ -117,7 +117,7 @@ class Trainer():
                         delete_these(True, self.pred, self.prey, self.easy_wins, self.med_wins, self.hard_wins,
                            self.easy_wins_rolled, self.med_wins_rolled, self.hard_wins_rolled, self.losses)
                         self.restart()
-            if(self.e > 100):
+            if(type(self.pred_condition) not in [int, float] or self.pred_condition < .05):
                 if(done[0] == "pred"):
                     if(self.easy_wins_rolled[-1] >= done[1] and
                        self.med_wins_rolled[-1] >= done[2] and
@@ -132,6 +132,7 @@ class Trainer():
       for i in range(size):
           w, _ = self.one_episode(difficulty = "hard")
           pred_wins += w
+      print("Predator wins {} out of {} games ({}).".format(pred_wins, size, round(100*(pred_wins/size))))
     
 
 # Train!
