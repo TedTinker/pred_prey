@@ -210,8 +210,8 @@ class PredPreyEnv():
 
     dist_before = self.agent_dist()
     p.stepSimulation(physicsClientId = self.physicsClient)
-    self.pred_energy -= spe_1
-    self.prey_energy -= spe_2
+    self.pred_energy -= spe_1.item()
+    self.prey_energy -= spe_2.item()
     self.pred_pos, self.pred_spe = self.get_position_and_speed(self.pred)
     self.prey_pos, self.prey_spe = self.get_position_and_speed(self.prey)
     dist_after = self.agent_dist()

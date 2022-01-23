@@ -36,16 +36,16 @@ def episode(
             ang_speed_2, new_prey_hc = prey.act(obs[1], prey_speed_before, prey_energy_before, ang_speed_2, prey_hc, prey_condition)
                 
             new_obs, (r_pred, r_prey), done, dist_after = env.step(ang_speed_1, ang_speed_2)
-            new_obs = torch.stack([new_obs[0][0], new_obs[1][0]])            
+            new_obs = torch.stack([new_obs[0][0], new_obs[1][0]])     
             
             # o, s, e, a, r, no, ns, d, cutoff
             to_push_pred.append(
-                (obs[0].cpu(), torch.tensor(pred_speed_before), torch.tensor(pred_energy_before), ang_speed_1.cpu(), r_pred, 
-                new_obs[0].cpu(), torch.tensor(env.pred_spe), torch.tensor(env.pred_energy), torch.tensor(done).int(), torch.tensor(done)))
+                (obs[0], torch.tensor(pred_speed_before), torch.tensor(pred_energy_before), ang_speed_1.cpu(), r_pred, 
+                new_obs[0], torch.tensor(env.pred_spe), torch.tensor(env.pred_energy), torch.tensor(done).int(), torch.tensor(done)))
                 
             to_push_prey.append(
-                (obs[1].cpu(), torch.tensor(prey_speed_before), torch.tensor(prey_energy_before), ang_speed_2.cpu(), r_prey, 
-                new_obs[1].cpu(), torch.tensor(env.prey_spe), torch.tensor(env.prey_energy), torch.tensor(done), torch.tensor(done)))
+                (obs[1], torch.tensor(prey_speed_before), torch.tensor(prey_energy_before), ang_speed_2.cpu(), r_prey, 
+                new_obs[1], torch.tensor(env.prey_spe), torch.tensor(env.prey_energy), torch.tensor(done), torch.tensor(done)))
                 
             reward_list.append((r_pred, r_prey))
             obs = new_obs
