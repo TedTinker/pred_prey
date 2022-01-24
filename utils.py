@@ -2,9 +2,6 @@
 import os
 os.environ["KMP_DUPLICATE_LIB_OK"]="TRUE" # I don't know what this is, but it's necessary. 
 
-file_1 = r"C:\Users\tedjt\Desktop\pred_prey"  # When I move here, I cannot restart my kernel? 
-file_2 = r"C:\Users\tedjt"                    # When I move here, I CAN restart my kernel? 
-
 
 
 import torch
@@ -82,27 +79,21 @@ import os
 import shutil
 
 def empty_folder(folder):
-  os.chdir(file_1)
   files = os.listdir("saves")
   if(folder not in files): return
   shutil.rmtree("saves/" + folder)
-  #os.chdir(file_2)
 
 def make_folder(folder):
-  os.chdir(file_1)
   files = os.listdir("saves")
   if(folder in files): return
   os.mkdir("saves/"+folder)
   os.mkdir("saves/"+folder+"/plots")
   os.mkdir("saves/"+folder+"/preds")
   os.mkdir("saves/"+folder+"/preys")
-  #os.chdir(file_2)
 
 def save_plot(name, folder = "default"):
   make_folder(folder)
-  os.chdir(file_1)
   plt.savefig("saves/"+folder+"/plots/"+name+".png")
-  #os.chdir(file_2)
   
   
   
@@ -194,14 +185,10 @@ def plot_wins(win_easy, win_med, win_hard, max_len = None, name = None, folder =
 # How to save/load pred/prey
 
 def save_pred_prey(pred, prey, post = "", folder = "default"):
-    os.chdir(file_1)
     torch.save(pred.state_dict(), "saves/" + folder + "/preds/pred{}.pt".format(post))
     torch.save(prey.state_dict(), "saves/" + folder + "/preys/prey{}.pt".format(post))
-    #os.chdir(file_2)
 
 def load_pred_prey(pred, prey, post = "", folder = "default"):
-    os.chdir(file_1)
     pred.load_state_dict(torch.load("saves/" + folder + "/pred/pred{}.pt".format(post)))
     prey.load_state_dict(torch.load("saves/" + folder + "/prey/prey{}.pt".format(post)))
-    #os.chdir(file_2)
     return(pred, prey)

@@ -5,15 +5,12 @@ import numpy as np
 from tqdm import tqdm
 import keyboard
 
-file = r"C:\Users\tedjt\Desktop\pred_prey"
-os.chdir(file) 
 from utils import delete_these, get_rolling_average, \
     duration, reset_start_time, empty_folder, make_folder, plot_wins, plot_losses, plot_rewards, \
     save_pred_prey, load_pred_prey
 from pred_prey_env import PredPreyEnv
 from how_to_play import episode, hand_episodes
 from rtd3 import RecurrentTD3
-#os.chdir(r"C:\Users\tedjt")
 
 
 

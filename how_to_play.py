@@ -1,8 +1,5 @@
 import torch
-import os
 
-file = r"C:\Users\tedjt\Desktop\pred_prey"
-os.chdir(file) 
 from utils import get_input, plot_rewards
 from pred_prey_env import add_discount
 

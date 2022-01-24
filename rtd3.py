@@ -11,10 +11,7 @@ from torch.optim import Adam
 
 from torch import nn
 
-import os
 
-file = r"C:\Users\tedjt\Desktop\pred_prey"
-os.chdir(file) 
 from utils import device, get_free_mem, delete_these
 from basics.abstract_algorithms import RecurrentOffPolicyRLAlgorithm
 from basics.utils import create_target, mean_of_unmasked_elements, polyak_update

@@ -3,10 +3,6 @@ import numpy as np
 import pybullet as p
 from math import degrees, pi, cos, sin
 
-
-import os
-file = r"C:\Users\tedjt\Desktop\pred_prey"
-os.chdir(file) 
 from arena import get_physics, Arena
 
 
