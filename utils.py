@@ -1,3 +1,12 @@
+# Google colab needs these.
+!pip install pybullet
+!pip install torchinfo
+!pip install kornia
+!pip install keyboard
+
+
+
+
 ### A few utilities
 import os
 os.environ["KMP_DUPLICATE_LIB_OK"]="TRUE" # I don't know what this is, but it's necessary. 
