@@ -10,6 +10,7 @@ os.chdir(file)
 from utils import delete_these, get_rolling_average, \
     duration, reset_start_time, empty_folder, make_folder, plot_wins, plot_losses, plot_rewards, \
     save_pred_prey, load_pred_prey
+from pred_prey_env import PredPreyEnv
 from how_to_play import episode
 from rtd3 import RecurrentTD3
 #os.chdir(r"C:\Users\tedjt")
@@ -24,8 +25,11 @@ class Trainer():
     def __init__(
             self, arena_name, energy = 3000,
             pred_condition = 0, prey_condition = 0, folder = "default"):
+        
         self.attempts = 0
         self.arena_name = arena_name
+        self.env = PredPreyEnv(self.arena_name)
+        self.env_gui = PredPreyEnv(self.arena_name, GUI = True)
         self.folder = folder
         self.energy = energy
         self.pred_condition, self.start_pred_condition = pred_condition, pred_condition
@@ -51,16 +55,24 @@ class Trainer():
       self.hard_wins_rolled = []
       self.losses = np.array([[None, None, None, None, None, None]])
       
-    def one_episode(self, difficulty = "med"):
+    def one_episode(self, difficulty = "med", push = True):
       if(difficulty == "easy"): min_dif = 0; max_dif = 0
       if(difficulty == "med"):  min_dif = 0; max_dif = 100
       if(difficulty == "hard"): min_dif = 100; max_dif = 100
-      pred_win, rewards = episode(
-          self.pred, self.prey, 
-          GUI = keyboard.is_pressed('q') ,
-          min_dif = min_dif, max_dif = max_dif, energy = self.energy,
-          pred_condition = self.pred_condition, prey_condition = self.prey_condition, 
-          arena_name = self.arena_name)
+      
+      GUI = keyboard.is_pressed('q') 
+      if(GUI): env = self.env_gui
+      else:    env = self.env
+      
+      to_push_pred, to_push_prey, pred_win, rewards = episode(
+          env, self.pred, self.prey, min_dif = min_dif, max_dif = max_dif, energy = self.energy,
+          pred_condition = self.pred_condition, prey_condition = self.prey_condition, GUI = GUI)
+      
+      if(push):
+          for i in range(len(to_push_pred)):
+              self.pred.episodes.push(to_push_pred[i])
+              self.prey.episodes.push(to_push_prey[i])
+          
       return(int(pred_win), rewards)
 
 
@@ -124,6 +136,8 @@ class Trainer():
                     if(self.easy_wins_rolled[-1] >= done[1] and
                        self.med_wins_rolled[-1] >= done[2] and
                        self.hard_wins_rolled[-1] >= done[3]):
+                        print("\n\nFinished!\n\n")
+                        print(self.pred_condition, self.prey_condition)
                         plot_wins(self.easy_wins_rolled, self.med_wins_rolled, self.hard_wins_rolled, name = "wins_last".format(self.e))
                         plot_losses(self.losses, too_long = None, name = "losses".format(self.e))
                         break
@@ -132,7 +146,7 @@ class Trainer():
       self.pred.eval(); self.prey.eval()
       pred_wins = 0
       for i in range(size):
-          w, _ = self.one_episode(difficulty = "hard")
+          w, _ = self.one_episode(difficulty = "hard", push = False)
           pred_wins += w
       print("Predator wins {} out of {} games ({}).".format(pred_wins, size, round(100*(pred_wins/size))))
     

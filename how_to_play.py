@@ -3,21 +3,16 @@ import os
 
 file = r"C:\Users\tedjt\Desktop\pred_prey"
 os.chdir(file) 
-from pred_prey_env import PredPreyEnv, add_discount
+from pred_prey_env import add_discount
 
 
 
 
 
 def episode(
-        pred, prey, 
-        GUI = False, 
-        min_dif = 0, max_dif = 100, energy = 3000,
-        pred_condition = 0, prey_condition = 0, 
-        arena_name = "empty_arena.png"):
+        env, pred, prey, min_dif = 0, max_dif = 100, energy = 3000,
+        pred_condition = 0, prey_condition = 0, GUI = False):
     
-    pred.train(), prey.train()
-    env = PredPreyEnv(GUI = GUI, arena_name = arena_name)
     (pred_rgbd, pred_speed, pred_energy, pred_action), \
     (prey_rgbd, prey_speed, prey_energy, prey_action) = env.reset(min_dif, max_dif, energy)  
     pred_hc, prey_hc  = None, None
@@ -47,7 +42,7 @@ def episode(
               (new_pred_rgbd, new_pred_speed, new_pred_energy, new_pred_action), \
               (new_prey_rgbd, new_prey_speed, new_prey_energy, new_prey_action)
               
-    env.close(forever = True)
+    env.close()
     win = dist_after < env.too_close
     
     r=1
@@ -57,9 +52,5 @@ def episode(
     to_push_pred = [(p[0], p[1], p[2], p[3], torch.tensor(r), p[5], p[6], p[7], p[8], p[9]) for p, r in zip(to_push_pred, reward_list_pred)]
     to_push_prey = [(p[0], p[1], p[2], p[3], torch.tensor(r), p[5], p[6], p[7], p[8], p[9]) for p, r in zip(to_push_prey, reward_list_prey)]
     
-    for i in range(len(to_push_pred)):
-        pred.episodes.push(to_push_pred[i])
-        prey.episodes.push(to_push_prey[i])
-    
     rewards = [(preds, preys) for preds, preys in zip(reward_list_pred, reward_list_prey)]
-    return(win, rewards)
+    return(to_push_pred, to_push_prey, win, rewards)
