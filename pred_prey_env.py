@@ -171,9 +171,9 @@ class PredPreyEnv():
         col = True
     return(col)
 
-  def change_velocity(self, agent_name, yaw_change, speed, printing = False):
+  def change_velocity(self, agent_name, yaw_change, speed, printing = True):
     if(agent_name == "pred"): agent, old_yaw, old_speed, pos = self.pred, self.pred_yaw, self.pred_spe, self.pred_pos
-    if(agent_name == "prey"): agent, old_yaw, old_speed, pos = self.prey, self.prey_yaw, self.pred_spe, self.prey_pos
+    if(agent_name == "prey"): agent, old_yaw, old_speed, pos = self.prey, self.prey_yaw, self.prey_spe, self.prey_pos
     
     new_yaw = old_yaw + yaw_change
     new_yaw %= 2*pi
