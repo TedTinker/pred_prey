@@ -25,11 +25,9 @@ def episode(
     done = False
     while(done == False):
         with torch.no_grad():
-            pred_energy_before = env.pred_energy
-            prey_energy_before = env.prey_energy
 
-            pred_action, pred_hc = pred.act(pred_rgbd, pred_speed, pred_energy_before, pred_action, pred_hc, pred_condition)
-            prey_action, prey_hc = prey.act(prey_rgbd, prey_speed, prey_energy_before, prey_action, prey_hc, prey_condition)
+            pred_action, pred_hc = pred.act(pred_rgbd, pred_speed, pred_energy, pred_action, pred_hc, pred_condition)
+            prey_action, prey_hc = prey.act(prey_rgbd, prey_speed, prey_energy, prey_action, prey_hc, prey_condition)
                 
             new_obs, (r_pred, r_prey), done, dist_after = env.step(pred_action, prey_action)
             (new_pred_rgbd, new_pred_speed, new_pred_energy, new_pred_action), \
@@ -37,11 +35,11 @@ def episode(
             
             # o, s, e, a, r, no, ns, d, cutoff
             to_push_pred.append(
-                (pred_rgbd, torch.tensor(pred_speed), torch.tensor(pred_energy_before), pred_action.cpu(), r_pred, 
+                (pred_rgbd, torch.tensor(pred_speed), torch.tensor(pred_energy), pred_action.cpu(), r_pred, 
                 new_pred_rgbd, torch.tensor(new_pred_speed), torch.tensor(env.pred_energy), torch.tensor(done).int(), torch.tensor(done)))
                 
             to_push_prey.append(
-                (prey_rgbd, torch.tensor(prey_speed), torch.tensor(prey_energy_before), prey_action.cpu(), r_prey, 
+                (prey_rgbd, torch.tensor(prey_speed), torch.tensor(prey_energy), prey_action.cpu(), r_prey, 
                 new_prey_rgbd, torch.tensor(new_prey_speed), torch.tensor(env.prey_energy), torch.tensor(done), torch.tensor(done)))
                 
             (pred_rgbd, pred_speed, pred_energy, pred_action),  \
