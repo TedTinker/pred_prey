@@ -11,7 +11,7 @@ from utils import delete_these, get_rolling_average, \
     duration, reset_start_time, empty_folder, make_folder, plot_wins, plot_losses, plot_rewards, \
     save_pred_prey, load_pred_prey
 from pred_prey_env import PredPreyEnv
-from how_to_play import episode
+from how_to_play import episode, hand_episodes
 from rtd3 import RecurrentTD3
 #os.chdir(r"C:\Users\tedjt")
 
@@ -34,7 +34,9 @@ class Trainer():
         self.energy = energy
         self.pred_condition, self.start_pred_condition = pred_condition, pred_condition
         self.prey_condition, self.start_prey_condition = prey_condition, prey_condition
+        self.pred_episodes, self.prey_episodes = None, None
         self.restart()
+        self.pred_episodes, self.prey_episodes = hand_episodes(self.env_gui, self.pred, self.prey, energy = 3000)
     
     def restart(self):
       reset_start_time()
@@ -44,6 +46,9 @@ class Trainer():
       self.e = 0
       self.pred = RecurrentTD3()
       self.prey = RecurrentTD3()
+      if(self.pred_episodes != None and self.prey_episodes != None):
+        self.pred.episodes = self.pred_episodes
+        self.prey.episodes = self.prey_episodes
       save_pred_prey(self.pred, self.prey, post = "_0", folder = self.folder)
       self.pred_condition = self.start_pred_condition
       self.prey_condition = self.start_prey_condition
@@ -114,7 +119,8 @@ class Trainer():
         while(self.e < max_epochs):
             self.e += 1
             if(self.e % 5 == 0):  print("Epoch {}, {} attempt(s). {}.".format(self.e, self.attempts, duration()))
-            if(self.e % 25 == 0): print(self.pred_condition, self.prey_condition)
+            if(self.e % 25 == 0): print("\n\nPredator condition: {}. Prey condition: {}.\n".format(
+                    self.pred_condition, self.prey_condition))
             self.epoch()
             if(self.e % 25 == 0): 
                 plot_wins(self.easy_wins_rolled, self.med_wins_rolled, self.hard_wins_rolled, name = "wins_{}".format(self.e))
@@ -134,10 +140,11 @@ class Trainer():
             if(type(self.pred_condition) not in [int, float] or self.pred_condition < .05):
                 if(done[0] == "pred"):
                     if(self.easy_wins_rolled[-1] >= done[1] and
-                       self.med_wins_rolled[-1] >= done[2] and
+                       self.med_wins_rolled[-1]  >= done[2] and
                        self.hard_wins_rolled[-1] >= done[3]):
                         print("\n\nFinished!\n\n")
-                        print(self.pred_condition, self.prey_condition)
+                        print("\n\nPredator condition: {}. Prey condition: {}.\n".format(
+                            self.pred_condition, self.prey_condition))
                         plot_wins(self.easy_wins_rolled, self.med_wins_rolled, self.hard_wins_rolled, name = "wins_last".format(self.e))
                         plot_losses(self.losses, too_long = None, name = "losses".format(self.e))
                         break

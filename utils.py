@@ -51,8 +51,12 @@ def get_input(string, okay, default = None):
     while(True):
         inp = input("\n{}\n{}\n".format(string, okay))
         if(inp == "" and default != None): 
-          if(type(default) == int): return(okay[default])
-          else:                     return(default)
+          if(type(default) == int): 
+              print("Default: {}.\n".format(okay[default]))
+              return(okay[default])
+          else:     
+              print("Default: {}.\n".format(default))                
+              return(default)
         try: 
             if(inp in okay.values()): return(inp)
             else:                     return(okay[int(inp)])
