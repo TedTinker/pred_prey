@@ -24,13 +24,15 @@ from rtd3 import RecurrentTD3
 class Trainer():
     def __init__(
             self, arena_name, energy = 3000,
-            pred_condition = 0, prey_condition = 0, folder = "default"):
+            pred_condition = 0, prey_condition = 0, 
+            save_folder = "default", load_folder = None):
         
         self.attempts = 0
         self.arena_name = arena_name
         self.env = PredPreyEnv(self.arena_name)
         self.env_gui = PredPreyEnv(self.arena_name, GUI = True)
-        self.folder = folder
+        self.save_folder = save_folder
+        self.load_folder = load_folder
         self.energy = energy
         self.pred_condition, self.start_pred_condition = pred_condition, pred_condition
         self.prey_condition, self.start_prey_condition = prey_condition, prey_condition
@@ -40,16 +42,18 @@ class Trainer():
     
     def restart(self):
       reset_start_time()
-      empty_folder(self.folder)
-      make_folder(self.folder)
+      empty_folder(self.save_folder)
+      make_folder(self.save_folder)
       self.attempts += 1
       self.e = 0
       self.pred = RecurrentTD3()
       self.prey = RecurrentTD3()
+      if(self.load_folder != None):
+          self.pred, self.prey = load_pred_prey(self.pred, self.prey, post = "", folder = self.load_folder)
       if(self.pred_episodes != None and self.prey_episodes != None):
         self.pred.episodes = self.pred_episodes
         self.prey.episodes = self.prey_episodes
-      save_pred_prey(self.pred, self.prey, post = "_0", folder = self.folder)
+      save_pred_prey(self.pred, self.prey, post = "_0", folder = self.save_folder)
       self.pred_condition = self.start_pred_condition
       self.prey_condition = self.start_prey_condition
       self.easy_wins = []
@@ -125,7 +129,7 @@ class Trainer():
             if(self.e % 25 == 0): 
                 plot_wins(self.easy_wins_rolled, self.med_wins_rolled, self.hard_wins_rolled, name = "wins_{}".format(self.e))
                 plot_losses(self.losses, too_long = 300)
-                save_pred_prey(self.pred, self.prey, post = "_{}".format(self.e), folder = self.folder)
+                save_pred_prey(self.pred, self.prey, post = "_{}".format(self.e), folder = self.save_folder)
             
             for r in restarts:
                 if(self.e >= r[0]):
@@ -158,7 +162,8 @@ class Trainer():
       print("Predator wins {} out of {} games ({}).".format(pred_wins, size, round(100*(pred_wins/size))))
     
 
-# Train!
-trainer = Trainer("empty_arena.png", energy = 3000, pred_condition = 1, prey_condition = "pin")
-trainer.train()
-trainer.test()
+if __name__ == "__main__":
+    # Train!
+    trainer = Trainer("empty_arena.png", energy = 3000, pred_condition = 1, prey_condition = "pin")
+    trainer.train()
+    trainer.test()
