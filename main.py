@@ -101,13 +101,14 @@ class Trainer():
         self.pred.train(); self.prey.train()
         while(self.e < max_epochs):
             self.e += 1
-            if(self.e % 5 == 0): print("Epoch {}, {} attempt(s). {}.".format(self.e, self.attempts, duration()))
+            if(self.e % 5 == 0):  print("Epoch {}, {} attempt(s). {}.".format(self.e, self.attempts, duration()))
             if(self.e % 25 == 0): print(self.pred_condition, self.prey_condition)
             self.epoch()
             if(self.e % 25 == 0): 
                 plot_wins(self.easy_wins_rolled, self.med_wins_rolled, self.hard_wins_rolled, name = "wins_{}".format(self.e))
                 plot_losses(self.losses, too_long = 300)
                 save_pred_prey(self.pred, self.prey, post = "_{}".format(self.e), folder = self.folder)
+            
             for r in restarts:
                 if(self.e >= r[0]):
                     if(self.easy_wins_rolled[-1] < r[1] or
@@ -117,6 +118,7 @@ class Trainer():
                         delete_these(True, self.pred, self.prey, self.easy_wins, self.med_wins, self.hard_wins,
                            self.easy_wins_rolled, self.med_wins_rolled, self.hard_wins_rolled, self.losses)
                         self.restart()
+            
             if(type(self.pred_condition) not in [int, float] or self.pred_condition < .05):
                 if(done[0] == "pred"):
                     if(self.easy_wins_rolled[-1] >= done[1] and

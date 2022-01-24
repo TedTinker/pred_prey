@@ -3,26 +3,21 @@ import gin
 import numpy as np
 import torch
 from torchinfo import summary as torch_summary
-import torch.optim as optim
 import random
 from collections import namedtuple
 
 import torch.nn.functional as F
 from torch.optim import Adam
 
-import torch
 from torch import nn
 
-import numpy as np
-from math import pi, degrees
 import os
-from copy import deepcopy
 
 file = r"C:\Users\tedjt\Desktop\pred_prey"
 os.chdir(file) 
 from utils import device, get_free_mem, delete_these
 from basics.abstract_algorithms import RecurrentOffPolicyRLAlgorithm
-from basics.utils import get_device, create_target, mean_of_unmasked_elements, polyak_update, save_net, load_net
+from basics.utils import create_target, mean_of_unmasked_elements, polyak_update
 
 
 
@@ -121,6 +116,8 @@ class RecurrentReplayBuffer:
       # fill placeholders
 
       self.o[self.episode_ptr, self.time_ptr+1] = no
+      self.s[self.episode_ptr, self.time_ptr+1] = ns
+      self.e[self.episode_ptr, self.time_ptr+1] = ne
       self.ready_for_sampling[self.episode_ptr] = 1
 
       # reset pointers
@@ -378,8 +375,6 @@ if __name__ == "__main__":
 
 
 # Make rtd3
-import random 
-
 @gin.configurable(module=__name__)
 class RecurrentTD3(RecurrentOffPolicyRLAlgorithm):
 

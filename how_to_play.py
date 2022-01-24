@@ -21,7 +21,6 @@ def episode(
     (pred_rgbd, pred_speed, pred_energy, pred_action), \
     (prey_rgbd, prey_speed, prey_energy, prey_action) = env.reset(min_dif, max_dif, energy)  
     pred_hc, prey_hc  = None, None
-    ang_speed_1, ang_speed_2 = None, None
     to_push_pred, to_push_prey = [], []
     done = False
     while(done == False):
@@ -31,23 +30,23 @@ def episode(
             prey_speed_before = env.prey_spe
             prey_energy_before = env.prey_energy
 
-            ang_speed_1, pred_hc = pred.act(pred_rgbd, pred_speed_before, pred_energy_before, ang_speed_1, pred_hc, pred_condition)
-            ang_speed_2, prey_hc = prey.act(prey_rgbd, prey_speed_before, prey_energy_before, ang_speed_2, prey_hc, prey_condition)
+            pred_action, pred_hc = pred.act(pred_rgbd, pred_speed_before, pred_energy_before, pred_action, pred_hc, pred_condition)
+            prey_action, prey_hc = prey.act(prey_rgbd, prey_speed_before, prey_energy_before, prey_action, prey_hc, prey_condition)
                 
-            new_obs, (r_pred, r_prey), done, dist_after = env.step(ang_speed_1, ang_speed_2)
+            new_obs, (r_pred, r_prey), done, dist_after = env.step(pred_action, prey_action)
             (new_pred_rgbd, new_pred_speed, new_pred_energy, new_pred_action), \
             (new_prey_rgbd, new_prey_speed, new_prey_energy, new_prey_action) = new_obs  
             
             # o, s, e, a, r, no, ns, d, cutoff
             to_push_pred.append(
-                (pred_rgbd, torch.tensor(pred_speed_before), torch.tensor(pred_energy_before), ang_speed_1.cpu(), r_pred, 
+                (pred_rgbd, torch.tensor(pred_speed_before), torch.tensor(pred_energy_before), pred_action.cpu(), r_pred, 
                 new_pred_rgbd, torch.tensor(env.pred_spe), torch.tensor(env.pred_energy), torch.tensor(done).int(), torch.tensor(done)))
                 
             to_push_prey.append(
-                (prey_rgbd, torch.tensor(prey_speed_before), torch.tensor(prey_energy_before), ang_speed_2.cpu(), r_prey, 
+                (prey_rgbd, torch.tensor(prey_speed_before), torch.tensor(prey_energy_before), prey_action.cpu(), r_prey, 
                 new_prey_rgbd, torch.tensor(env.prey_spe), torch.tensor(env.prey_energy), torch.tensor(done), torch.tensor(done)))
                 
-            (pred_rgbd, pred_speed, pred_energy, pred_action), \
+            (pred_rgbd, pred_speed, pred_energy, pred_action),  \
             (prey_rgbd, prey_speed, prey_energy, prey_action) = \
               (new_pred_rgbd, new_pred_speed, new_pred_energy, new_pred_action), \
               (new_prey_rgbd, new_prey_speed, new_prey_energy, new_prey_action)

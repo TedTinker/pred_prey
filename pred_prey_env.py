@@ -1,7 +1,7 @@
 import torch
 import numpy as np
 import pybullet as p
-from math import degrees, pi, cos, sin, sqrt
+from math import degrees, pi, cos, sin
 
 
 import os
@@ -17,7 +17,6 @@ from arena import get_physics, Arena
 
 ### The arena environment
     
-import gym # This is not deeply used yet. 
 from matplotlib import pyplot as plt
 from torchvision.transforms.functional import resize
 
@@ -226,14 +225,6 @@ class PredPreyEnv():
     return(observations, rewards, done, dist_after)
     
 
-    
-
-
-from torch.distributions import Normal
-from tqdm import tqdm
-
-
-    
     
     
 
