@@ -187,8 +187,8 @@ class PredPreyEnv():
       print("Old speed:\t{}\nNew speed:\t{}".format(old_speed, speed))
 
   def unnormalize(self, action): # from (-1, 1) to (min, max)
-    yaw = action[0].clip(-1,1) * self.max_angle_change
-    spe = self.min_speed + ((action[1].clip(-1,1) + 1)/2) * (self.max_speed - self.min_speed)
+    yaw = action[0].clip(-1,1).item() * self.max_angle_change
+    spe = self.min_speed + ((action[1].clip(-1,1).item() + 1)/2) * (self.max_speed - self.min_speed)
     return(yaw, spe)
   
   def step(self, pred_action, prey_action):
@@ -203,8 +203,8 @@ class PredPreyEnv():
 
     dist_before = self.agent_dist()
     p.stepSimulation(physicsClientId = self.physicsClient)
-    self.pred_energy -= spe_1.item()
-    self.prey_energy -= spe_2.item()
+    self.pred_energy -= spe_1
+    self.prey_energy -= spe_2
     self.pred_pos, self.pred_spe = self.get_position_and_speed(self.pred)
     self.prey_pos, self.prey_spe = self.get_position_and_speed(self.prey)
     dist_after = self.agent_dist()

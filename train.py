@@ -59,7 +59,7 @@ class Trainer():
       if(self.pred_episodes != None and self.prey_episodes != None):
         self.pred.episodes = self.pred_episodes
         self.prey.episodes = self.prey_episodes
-      save_pred_prey(self.pred, self.prey, post = "_0", folder = self.save_folder)
+      save_pred_prey(self.pred, self.prey, post = "0", folder = self.save_folder)
       self.pred_condition = self.start_pred_condition
       self.prey_condition = self.start_prey_condition
       self.easy_wins = []
@@ -71,8 +71,8 @@ class Trainer():
       self.losses = np.array([[None, None, None, None, None, None]])
       
     def one_episode(self, difficulty = "med", push = True):
-      if(difficulty == "easy"): min_dif = 0; max_dif = 0
-      if(difficulty == "med"):  min_dif = 0; max_dif = 100
+      if(difficulty == "easy"): min_dif = 0;   max_dif = 0
+      if(difficulty == "med"):  min_dif = 0;   max_dif = 100
       if(difficulty == "hard"): min_dif = 100; max_dif = 100
       
       GUI = keyboard.is_pressed('q') 
@@ -155,6 +155,7 @@ class Trainer():
                         print("\n\nFinished!\n\n")
                         print("\n\nPredator condition: {}. Prey condition: {}.\n".format(
                             self.pred_condition, self.prey_condition))
+                        save_pred_prey(self.pred, self.prey, post = "last", folder = self.save_folder)
                         plot_wins(self.easy_wins_rolled, self.med_wins_rolled, self.hard_wins_rolled, name = "wins_last".format(self.e), folder = self.save_folder)
                         plot_losses(self.losses, too_long = None, name = "losses".format(self.e), folder = self.save_folder)
                         break
@@ -173,3 +174,23 @@ trainer = Trainer("empty_arena", energy = 3000, pred_condition = 1, prey_conditi
                   save_folder = "empty_with_prey_pinned", agent_size = .8)
 trainer.train()
 trainer.test()
+
+
+"""
+trainer = Trainer("big_arena", energy = 4000, pred_condition = 1, prey_condition = "random",
+                  save_folder = "big_with_prey_random", 
+                  load_folder = "empty_with_prey_pinned",
+                  agent_size = .8)
+trainer.train()
+trainer.test()
+"""
+
+
+"""
+trainer = Trainer("final_arena", energy = 4000, pred_condition = 1, prey_condition = 1,
+                  save_folder = "final", 
+                  load_folder = "big_with_prey_random",
+                  agent_size = .8)
+trainer.train()
+trainer.test()
+"""
