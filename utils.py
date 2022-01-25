@@ -106,8 +106,9 @@ def save_plot(name, folder = "default"):
 def plot_rewards(rewards, name = None, folder = "default"):
   total_length = len(rewards)
   x = [i for i in range(1, total_length + 1)]
-  plt.plot(x, [r[0] for r in rewards], color = "lightcoral") # Predator
-  plt.plot(x, [r[1] for r in rewards], color = "turquoise")  # Prey
+  plt.plot(x, [r[0] for r in rewards], color = "lightcoral", label = "Predator") # Predator
+  plt.plot(x, [r[1] for r in rewards], color = "turquoise", label = "Prey")  # Prey
+  plt.legend()
   plt.title("Rewards")
   plt.xlabel("Time")
   plt.ylabel("Reward")
@@ -135,12 +136,14 @@ def plot_losses(losses, too_long = None, name = None, folder = "default"):
   
   fig, ax1 = plt.subplots() 
   ax2 = ax1.twinx() 
-  ax1.plot(actor_x, pred_actor_y, color = "#ff0000")
-  ax1.plot(actor_x, prey_actor_y, color = "#0000ff")
-  ax2.plot(critic_x, pred_critic_1_y, color = "lightcoral", linestyle = "--")
-  ax2.plot(critic_x, pred_critic_2_y, color = "lightcoral", linestyle = ":")
-  ax2.plot(critic_x, prey_critic_1_y, color = "turquoise", linestyle = "--")
-  ax2.plot(critic_x, prey_critic_2_y, color = "turquoise", linestyle = ":")
+  ax1.plot(actor_x, pred_actor_y, color = "#ff0000", label = "Predator actor")
+  ax1.plot(actor_x, prey_actor_y, color = "#0000ff", label = "Prey actor")
+  ax1.legend()
+  ax2.plot(critic_x, pred_critic_1_y, color = "lightcoral", linestyle = "--", label = "Pred critic")
+  ax2.plot(critic_x, pred_critic_2_y, color = "lightcoral", linestyle = ":", label = "Pred critic")
+  ax2.plot(critic_x, prey_critic_1_y, color = "turquoise", linestyle = "--", label = "Prey critic")
+  ax2.plot(critic_x, prey_critic_2_y, color = "turquoise", linestyle = ":", label = "Prey critic")
+  ax2.legend()
   plt.title("Losses")
   plt.xlabel("Training iterations")
   ax1.set_ylabel("Actor losses")
@@ -162,10 +165,11 @@ def plot_wins(win_easy, win_med, win_hard, max_len = None, name = None, folder =
     win_easy = win_easy[-max_len:]
     win_med = win_med[-max_len:]
     win_hard = win_hard[-max_len:]
-  plt.plot(x, win_easy, color = "turquoise")
-  plt.plot(x, win_med, color = "gray")
-  plt.plot(x, win_hard, color = "lightcoral")
+  plt.plot(x, win_easy, color = "turquoise", label = "Easy for predatory")
+  plt.plot(x, win_med, color = "gray", label = "Medium")
+  plt.plot(x, win_hard, color = "lightcoral", label = "Hard")
   plt.ylim([0, 1])
+  plt.legend()
   plt.title("Predator win-rates")
   plt.xlabel("Epochs")
   plt.ylabel("Predator win-rate")
@@ -175,7 +179,7 @@ def plot_wins(win_easy, win_med, win_hard, max_len = None, name = None, folder =
   
   
   
-  
+
   
   
   
