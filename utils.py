@@ -189,6 +189,6 @@ def save_pred_prey(pred, prey, post = "", folder = "default"):
     torch.save(prey.state_dict(), "saves/" + folder + "/preys/prey_{}.pt".format(post))
 
 def load_pred_prey(pred, prey, post = "last", folder = "default"):
-    pred.load_state_dict(torch.load("saves/" + folder + "/pred/pred_{}.pt".format(post)))
-    prey.load_state_dict(torch.load("saves/" + folder + "/prey/prey_{}.pt".format(post)))
+    pred.load_state_dict(torch.load("saves/" + folder + "/preds/pred_{}.pt".format(post)))
+    prey.load_state_dict(torch.load("saves/" + folder + "/preys/prey_{}.pt".format(post)))
     return(pred, prey)

@@ -55,7 +55,7 @@ class Trainer():
       self.pred = RecurrentTD3()
       self.prey = RecurrentTD3()
       if(self.load_folder != None):
-          self.pred, self.prey = load_pred_prey(self.pred, self.prey, post = "", folder = self.load_folder)
+          self.pred, self.prey = load_pred_prey(self.pred, self.prey, post = "last", folder = self.load_folder)
       if(self.pred_episodes != None and self.prey_episodes != None):
         self.pred.episodes = self.pred_episodes
         self.prey.episodes = self.prey_episodes
@@ -148,10 +148,10 @@ class Trainer():
                         self.restart()
             
             if(type(self.pred_condition) not in [int, float] or self.pred_condition < .05):
-                if(done[0] == "pred"):
-                    if(self.easy_wins_rolled[-1] >= done[1] and
+                if(done[0] == "pred" or self.e < max_epochs):
+                    if((self.easy_wins_rolled[-1] >= done[1] and
                        self.med_wins_rolled[-1]  >= done[2] and
-                       self.hard_wins_rolled[-1] >= done[3]):
+                       self.hard_wins_rolled[-1] >= done[3]) or self.e < max_epochs):
                         print("\n\nFinished!\n\n")
                         print("\n\nPredator condition: {}. Prey condition: {}.\n".format(
                             self.pred_condition, self.prey_condition))
@@ -169,6 +169,8 @@ class Trainer():
       print("Predator wins {} out of {} games ({}%).".format(pred_wins, size, round(100*(pred_wins/size))))
     
 
+
+"""
 # Train!
 trainer = Trainer("empty_arena", energy = 3000, pred_condition = 1, prey_condition = "pin",
                   save_folder = "empty_with_prey_pinned", agent_size = .8)
@@ -183,7 +185,6 @@ trainer = Trainer("big_arena", energy = 4000, pred_condition = 1, prey_condition
                   agent_size = .8)
 trainer.train()
 trainer.test()
-"""
 
 
 """
