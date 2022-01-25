@@ -24,6 +24,7 @@ class Trainer():
             self, arena_name, energy = 3000, 
             pred_condition = 0, prey_condition = 0, 
             save_folder = "default", load_folder = None,
+            play_by_hand = False,
             image_size = 16, min_speed = 10, max_speed = 50, max_angle_change = pi/2, 
             agent_size = .5):
         
@@ -44,7 +45,8 @@ class Trainer():
         self.prey_condition, self.start_prey_condition = prey_condition, prey_condition
         self.pred_episodes, self.prey_episodes = None, None
         self.restart()
-        self.pred_episodes, self.prey_episodes = hand_episodes(self.env_gui, self.pred, self.prey, energy = 3000)
+        if(play_by_hand):
+            self.pred_episodes, self.prey_episodes = hand_episodes(self.env_gui, self.pred, self.prey, energy = 3000)
     
     def restart(self):
       reset_start_time()
@@ -70,6 +72,10 @@ class Trainer():
       self.hard_wins_rolled = []
       self.losses = np.array([[None, None, None, None, None, None]])
       
+    def close(self):
+        self.env.close(forever = True)
+        self.env_gui.close(forever = True)
+      
     def one_episode(self, difficulty = "med", push = True):
       if(difficulty == "easy"): min_dif = 0;   max_dif = 0
       if(difficulty == "med"):  min_dif = 0;   max_dif = 100
@@ -82,6 +88,7 @@ class Trainer():
       to_push_pred, to_push_prey, pred_win, rewards = episode(
           env, self.pred, self.prey, min_dif = min_dif, max_dif = max_dif, energy = self.energy,
           pred_condition = self.pred_condition, prey_condition = self.prey_condition, GUI = GUI)
+      if(keyboard.is_pressed('q') ): plot_rewards(rewards)
       
       if(push):
           for i in range(len(to_push_pred)):
@@ -95,7 +102,6 @@ class Trainer():
       win, rewards = self.one_episode("easy")
       self.easy_wins.append(win)
       self.easy_wins_rolled.append(get_rolling_average(self.easy_wins))
-      if(keyboard.is_pressed('q') ): plot_rewards(rewards)
     
       win, rewards = self.one_episode("med")
       self.med_wins.append(win)
@@ -112,10 +118,10 @@ class Trainer():
       
       iterations = 4
       pred_losses = self.pred.update_networks(batch_size = 32, iterations = iterations)
-      #prey_losses = self.prey.update_networks(batch_size = 32, iterations = iterations)
+      prey_losses = self.prey.update_networks(batch_size = 32, iterations = iterations)
       if(iterations == 1): 
-          pred_losses = np.expand_dims(pred_losses,0)#; prey_losses = np.expand_dims(prey_losses,0)
-      self.losses = np.concatenate([self.losses, np.concatenate([pred_losses, pred_losses], axis = 1)])
+          pred_losses = np.expand_dims(pred_losses,0); prey_losses = np.expand_dims(prey_losses,0)
+      self.losses = np.concatenate([self.losses, np.concatenate([pred_losses, prey_losses], axis = 1)])
 
 
 
@@ -147,11 +153,11 @@ class Trainer():
                            self.easy_wins_rolled, self.med_wins_rolled, self.hard_wins_rolled, self.losses)
                         self.restart()
             
-            if(type(self.pred_condition) not in [int, float] or self.pred_condition < .05):
-                if(done[0] == "pred" or self.e < max_epochs):
+            if(type(self.pred_condition) not in [int, float] or self.pred_condition < .05 or self.e > max_epochs):
+                if(done[0] == "pred" or self.e > max_epochs):
                     if((self.easy_wins_rolled[-1] >= done[1] and
                        self.med_wins_rolled[-1]  >= done[2] and
-                       self.hard_wins_rolled[-1] >= done[3]) or self.e < max_epochs):
+                       self.hard_wins_rolled[-1] >= done[3]) or self.e > max_epochs):
                         print("\n\nFinished!\n\n")
                         print("\n\nPredator condition: {}. Prey condition: {}.\n".format(
                             self.pred_condition, self.prey_condition))
@@ -170,28 +176,40 @@ class Trainer():
     
 
 
-"""
 # Train!
 trainer = Trainer("empty_arena", energy = 3000, pred_condition = 1, prey_condition = "pin",
                   save_folder = "empty_with_prey_pinned", agent_size = .8)
 trainer.train()
 trainer.test()
+trainer.close()
 
 
-"""
+
 trainer = Trainer("big_arena", energy = 4000, pred_condition = 1, prey_condition = "random",
                   save_folder = "big_with_prey_random", 
                   load_folder = "empty_with_prey_pinned",
                   agent_size = .8)
 trainer.train()
 trainer.test()
+trainer.close()
 
 
-"""
+
 trainer = Trainer("final_arena", energy = 4000, pred_condition = 1, prey_condition = 1,
                   save_folder = "final", 
                   load_folder = "big_with_prey_random",
                   agent_size = .8)
-trainer.train()
+trainer.train(restarts = (), done = ("None", 2,2,2))
 trainer.test()
-"""
+trainer.close()
+
+
+
+
+
+
+trainer = Trainer("final_arena", energy = 4000, pred_condition = 0, prey_condition = 0,
+                  save_folder = "default", 
+                  load_folder = "final",
+                  agent_size = .8)
+trainer.test()
