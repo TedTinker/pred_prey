@@ -22,16 +22,14 @@ import cv2
 from itertools import product
 from scipy.stats import percentileofscore
 import random
-import os
 
 def pythagorean(pos_1, pos_2):
   return ((pos_1[0] - pos_2[0])**2 + (pos_1[1] - pos_2[1])**2)**.5
 
 class Arena():
-  def __init__(self, arena_name,
-               agent_size = .5):
+  def __init__(self, arena_name, agent_size = .5):
     self.arena_name = arena_name
-    self.arena = cv2.imread("arenas/" + arena_name); self.w, self.h, _ = self.arena.shape
+    self.arena = cv2.imread("arenas/" + arena_name + ".png"); self.w, self.h, _ = self.arena.shape
     self.agent_size = agent_size
     self.open_spots = [(x,y) for x, y in product(range(self.w), range(self.h)) \
                       if self.arena[x,y].tolist() == [255, 255, 255]]

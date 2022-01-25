@@ -4,6 +4,7 @@ os.environ["KMP_DUPLICATE_LIB_OK"]="TRUE"
 import numpy as np
 from tqdm import tqdm
 import keyboard
+from math import pi
 
 from utils import delete_these, get_rolling_average, \
     duration, reset_start_time, empty_folder, make_folder, plot_wins, plot_losses, plot_rewards, \
@@ -20,14 +21,22 @@ from rtd3 import RecurrentTD3
 
 class Trainer():
     def __init__(
-            self, arena_name, energy = 3000,
+            self, arena_name, energy = 3000, 
             pred_condition = 0, prey_condition = 0, 
-            save_folder = "default", load_folder = None):
+            save_folder = "default", load_folder = None,
+            image_size = 16, min_speed = 10, max_speed = 50, max_angle_change = pi/2, 
+            agent_size = .5):
         
         self.attempts = 0
         self.arena_name = arena_name
-        self.env = PredPreyEnv(self.arena_name)
-        self.env_gui = PredPreyEnv(self.arena_name, GUI = True)
+        self.env = PredPreyEnv(self.arena_name, GUI = False, 
+                               image_size = image_size, min_speed = min_speed, 
+                               max_speed = max_speed, max_angle_change = max_angle_change,
+                               agent_size = agent_size)
+        self.env_gui = PredPreyEnv(self.arena_name, GUI = True,
+                                   image_size = image_size, min_speed = min_speed, 
+                                   max_speed = max_speed, max_angle_change = max_angle_change,
+                                   agent_size = agent_size)
         self.save_folder = save_folder
         self.load_folder = load_folder
         self.energy = energy
@@ -124,9 +133,9 @@ class Trainer():
                     self.pred_condition, self.prey_condition))
             self.epoch()
             if(self.e % 25 == 0): 
-                plot_wins(self.easy_wins_rolled, self.med_wins_rolled, self.hard_wins_rolled, name = "wins_{}".format(self.e))
+                plot_wins(self.easy_wins_rolled, self.med_wins_rolled, self.hard_wins_rolled, name = "wins_{}".format(self.e), folder = self.save_folder)
                 plot_losses(self.losses, too_long = 300)
-                save_pred_prey(self.pred, self.prey, post = "_{}".format(self.e), folder = self.save_folder)
+                save_pred_prey(self.pred, self.prey, post = "{}".format(self.e), folder = self.save_folder)
             
             for r in restarts:
                 if(self.e >= r[0]):
@@ -146,8 +155,8 @@ class Trainer():
                         print("\n\nFinished!\n\n")
                         print("\n\nPredator condition: {}. Prey condition: {}.\n".format(
                             self.pred_condition, self.prey_condition))
-                        plot_wins(self.easy_wins_rolled, self.med_wins_rolled, self.hard_wins_rolled, name = "wins_last".format(self.e))
-                        plot_losses(self.losses, too_long = None, name = "losses".format(self.e))
+                        plot_wins(self.easy_wins_rolled, self.med_wins_rolled, self.hard_wins_rolled, name = "wins_last".format(self.e), folder = self.save_folder)
+                        plot_losses(self.losses, too_long = None, name = "losses".format(self.e), folder = self.save_folder)
                         break
     
     def test(self, size = 100):
@@ -156,11 +165,11 @@ class Trainer():
       for i in range(size):
           w, _ = self.one_episode(difficulty = "hard", push = False)
           pred_wins += w
-      print("Predator wins {} out of {} games ({}).".format(pred_wins, size, round(100*(pred_wins/size))))
+      print("Predator wins {} out of {} games ({}%).".format(pred_wins, size, round(100*(pred_wins/size))))
     
 
-if __name__ == "__main__":
-    # Train!
-    trainer = Trainer("empty_arena.png", energy = 3000, pred_condition = 1, prey_condition = "pin")
-    trainer.train()
-    trainer.test()
+# Train!
+trainer = Trainer("empty_arena", energy = 3000, pred_condition = 1, prey_condition = "pin",
+                  save_folder = "empty_with_prey_pinned", agent_size = .8)
+trainer.train()
+trainer.test()

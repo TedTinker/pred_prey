@@ -35,8 +35,6 @@ def get_reward(agent, dist, closer, collision, printing = False):
 def add_discount(rewards, last, GAMMA = .9):
     discounts = [last * (GAMMA**i) for i in range(len(rewards))]
     discounts.reverse()
-    #for r, d in zip(rewards, discounts):
-    #    print("{} + {} = {}".format(r, d, r+d))
     return([r + d for r, d in zip(rewards, discounts)])
 
 
@@ -44,12 +42,12 @@ def add_discount(rewards, last, GAMMA = .9):
 # Made an environment! 
 class PredPreyEnv():   
   def __init__(
-      self, arena_name = "arena.png", GUI = False, image_size = 16, 
-      min_speed = 10, max_speed = 50, max_angle_change = pi/2, too_close = .6):
+      self, arena_name = "arena", GUI = False, image_size = 16, 
+      min_speed = 10, max_speed = 50, max_angle_change = pi/2, agent_size = .5):
     
     self.image_size = image_size; self.min_speed = min_speed; self.max_speed = max_speed
-    self.max_angle_change = max_angle_change; self.too_close = too_close
-    self.arena = Arena(arena_name); self.GUI = GUI
+    self.max_angle_change = max_angle_change; self.agent_size = agent_size; self.too_close = agent_size + .1
+    self.arena = Arena(arena_name, agent_size); self.GUI = GUI
     self.already_constructed = False
     self.physicsClient = get_physics(self.GUI, self.arena.w, self.arena.h)
     self.pred, self.prey = None, None
@@ -225,7 +223,7 @@ class PredPreyEnv():
     
 
 if __name__ == "__main__":
-    env = PredPreyEnv(arena_name = "big_arena.png")
+    env = PredPreyEnv(arena_name = "big_arena")
     env.reset()   
     env.render() 
     env.close(forever = True)
