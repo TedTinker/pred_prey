@@ -7,7 +7,7 @@ import keyboard
 from math import pi
 
 from utils import delete_these, get_rolling_average, \
-    duration, reset_start_time, empty_folder, make_folder, plot_wins, plot_losses, plot_rewards, \
+    duration, reset_start_time, remove_folder, make_folder, plot_wins, plot_losses, plot_rewards, \
     save_pred_prey, load_pred_prey
 from pred_prey_env import PredPreyEnv
 from how_to_play import episode, hand_episodes
@@ -50,7 +50,7 @@ class Trainer():
     
     def restart(self):
       reset_start_time()
-      empty_folder(self.save_folder)
+      remove_folder(self.save_folder)
       make_folder(self.save_folder)
       self.attempts += 1
       self.e = 0
@@ -127,18 +127,19 @@ class Trainer():
 
     def train(
             self, 
-            max_epochs = 1000,
-            restarts = ((500, .1, .1, .1), (1000, .5, .3, .2)),
+            max_epochs = 1000, how_often_to_show_and_save = 25,
+            restarts = ((500, .1, .1, .1),),
             done = ("pred", .99, .99, .95)):
         
         self.pred.train(); self.prey.train()
         while(self.e < max_epochs):
             self.e += 1
-            if(self.e % 5 == 0):  print("Epoch {}, {} attempt(s). {}.".format(self.e, self.attempts, duration()))
-            if(self.e % 25 == 0): print("\n\nPredator condition: {}. Prey condition: {}.\n".format(
+            if(self.e % 5 == 0):  
+                print("\nEpoch {}, {} attempt(s). {}.".format(self.e, self.attempts, duration()))
+                print("Predator condition: {}. Prey condition: {}.".format(
                     self.pred_condition, self.prey_condition))
             self.epoch()
-            if(self.e % 25 == 0): 
+            if(self.e % how_often_to_show_and_save == 0): 
                 plot_wins(self.easy_wins_rolled, self.med_wins_rolled, self.hard_wins_rolled, name = "wins_{}".format(self.e), folder = self.save_folder)
                 plot_losses(self.losses, too_long = 300)
                 save_pred_prey(self.pred, self.prey, post = "{}".format(self.e), folder = self.save_folder)
@@ -173,43 +174,3 @@ class Trainer():
           w, _ = self.one_episode(difficulty = "hard", push = False)
           pred_wins += w
       print("Predator wins {} out of {} games ({}%).".format(pred_wins, size, round(100*(pred_wins/size))))
-    
-
-
-# Train!
-trainer = Trainer("empty_arena", energy = 3000, pred_condition = 1, prey_condition = "pin",
-                  save_folder = "empty_with_prey_pinned", agent_size = .8)
-trainer.train()
-trainer.test()
-trainer.close()
-
-
-
-trainer = Trainer("big_arena", energy = 4000, pred_condition = 1, prey_condition = "random",
-                  save_folder = "big_with_prey_random", 
-                  load_folder = "empty_with_prey_pinned",
-                  agent_size = .8)
-trainer.train()
-trainer.test()
-trainer.close()
-
-
-
-trainer = Trainer("final_arena", energy = 4000, pred_condition = 1, prey_condition = 1,
-                  save_folder = "final", 
-                  load_folder = "big_with_prey_random",
-                  agent_size = .8)
-trainer.train(restarts = (), done = ("None", 2,2,2))
-trainer.test()
-trainer.close()
-
-
-
-
-
-
-trainer = Trainer("final_arena", energy = 4000, pred_condition = 0, prey_condition = 0,
-                  save_folder = "default", 
-                  load_folder = "final",
-                  agent_size = .8)
-trainer.test()

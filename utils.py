@@ -62,7 +62,7 @@ def get_input(string, okay, default = None):
             
             
             
-            
+# How to get rolling average.
 def get_rolling_average(wins, roll = 100):
   if(len(wins) < roll):
     return(sum(wins)/len(wins))
@@ -78,7 +78,7 @@ import matplotlib.pyplot as plt
 import os
 import shutil
 
-def empty_folder(folder):
+def remove_folder(folder):
   files = os.listdir("saves")
   if(folder not in files): return
   shutil.rmtree("saves/" + folder)
