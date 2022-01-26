@@ -21,7 +21,7 @@ from rtd3 import RecurrentTD3
 
 class Trainer():
     def __init__(
-            self, arena_name, energy = 3000, 
+            self, arena_name, energy = 3000, training_agent = "both", 
             pred_condition = 0, prey_condition = 0, play_by_hand = False,
             save_folder = "default", load_folder = None, load_name = "last",
             agent_size = .5, image_size = 16, min_speed = 10, max_speed = 50, max_angle_change = pi/2, 
@@ -29,6 +29,7 @@ class Trainer():
             done_if =    {"pred" : {100 : {"easy" : .99, "med" : .99, "hard" : .95}}},
             difficulty_dic = {"easy" : (0,  0), "med"  : (0,  100), "hard" : (100,100)}):
         
+        self.training_agent = training_agent
         self.attempts = 0
         self.arena_name = arena_name; self.energy = energy
         self.pred_condition, self.start_pred_condition = pred_condition, pred_condition
@@ -72,7 +73,8 @@ class Trainer():
       self.prey_condition = self.start_prey_condition
       self.easy_wins = []; self.med_wins = []; self.hard_wins = []
       self.easy_wins_rolled = []; self.med_wins_rolled = []; self.hard_wins_rolled = []
-      self.losses = np.array([[None, None, None, None, None, None]])
+      self.pred_losses = np.array([[None]*3])
+      self.prey_losses = np.array([[None]*3])
       
     def close(self):
         self.env.close(forever = True)
@@ -119,12 +121,19 @@ class Trainer():
           self.prey_condition *= .99
       
       iterations = 4
-      pred_losses = self.pred.update_networks(batch_size = 32, iterations = iterations)
-      prey_losses = self.prey.update_networks(batch_size = 32, iterations = iterations)
-      if(iterations == 1): 
-          pred_losses = np.expand_dims(pred_losses,0); prey_losses = np.expand_dims(prey_losses,0)
-      self.losses = np.concatenate([self.losses, np.concatenate([pred_losses, prey_losses], axis = 1)])
-      if(keyboard.is_pressed('q') ): plot_losses(self.losses, too_long = 300)
+      if(self.training_agent in ["pred", "both"]):
+          pred_losses = self.pred.update_networks(batch_size = 32, iterations = iterations)
+      else: pred_losses = np.array([[None]*3]*iterations)
+      self.pred_losses = np.concatenate([self.pred_losses, pred_losses])
+      
+      if(self.training_agent in ["prey", "both"]):
+          prey_losses = self.prey.update_networks(batch_size = 32, iterations = iterations)
+      else: prey_losses = np.array([[None]*3]*iterations)
+      if(iterations == 1):  pred_losses = np.expand_dims(pred_losses,0); pred_losses = np.expand_dims(pred_losses,0)
+      self.pred_losses = np.concatenate([self.pred_losses, pred_losses])
+      self.prey_losses = np.concatenate([self.prey_losses, prey_losses])
+
+      if(keyboard.is_pressed('q') ): plot_losses(pred_losses, prey_losses, too_long = 300)
 
 
     def restart_or_done(self):
@@ -172,7 +181,7 @@ class Trainer():
             self.epoch()
             if(self.e % how_often_to_show_and_save == 0): 
                 plot_wins(self.easy_wins_rolled, self.med_wins_rolled, self.hard_wins_rolled, name = "wins_{}".format(self.e), folder = self.save_folder)
-                plot_losses(self.losses, too_long = 300)
+                plot_losses(self.pred_losses, self.prey_losses, too_long = 300)
                 save_pred_prey(self.pred, self.prey, post = "{}".format(self.e), folder = self.save_folder)
             
             restart, done = self.restart_or_done()
@@ -187,7 +196,7 @@ class Trainer():
                     self.pred_condition, self.prey_condition))
                 save_pred_prey(self.pred, self.prey, post = "last", folder = self.save_folder)
                 plot_wins(self.easy_wins_rolled, self.med_wins_rolled, self.hard_wins_rolled, name = "wins_last".format(self.e), folder = self.save_folder)
-                plot_losses(self.losses, too_long = None, name = "losses".format(self.e), folder = self.save_folder)
+                plot_losses(self.pred_losses, self.prey_losses, too_long = None, name = "losses".format(self.e), folder = self.save_folder)
                 break
     
     def test(self, size = 100):
