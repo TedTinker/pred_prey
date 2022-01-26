@@ -2,6 +2,7 @@ from train import Trainer
 
 # Train!
 trainer = Trainer("empty_arena", energy = 3000, pred_condition = 1, prey_condition = "pin",
+                  play_by_hand = True,
                   save_folder = "empty_with_prey_pinned", agent_size = .8)
 trainer.train()
 trainer.test()

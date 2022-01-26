@@ -46,7 +46,9 @@ class Trainer():
         self.pred_episodes, self.prey_episodes = None, None
         self.restart()
         if(play_by_hand):
-            self.pred_episodes, self.prey_episodes = hand_episodes(self.env_gui, self.pred, self.prey, energy = 3000)
+            self.pred_episodes, self.prey_episodes = hand_episodes(
+                self.env_gui, self.pred, self.prey, self.energy,
+                "by_hand", self.prey_condition)
     
     def restart(self):
       reset_start_time()

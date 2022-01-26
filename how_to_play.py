@@ -97,14 +97,18 @@ def move_by_hand(env, agent_name):
 
 
 # How to play a whole episode by hand.
-def hand_episodes(env, pred, prey, energy = 3000):
+def hand_episodes(env, pred, prey, energy = None, pred_condition = None, prey_condition = None):
   play = get_input("Play a game by hand?", ["y", "n"], default = "n")
   if(play == "n"): return(None, None)
   while(play == "y"):
+    if(energy == None):
+        energy = int(get_input("Energy?", ["2000", "3000", "4000"], default = "3000"))
     min_dif = get_input("Minimum pred-difficulty?", [str(i) for i in range(101)])
     max_dif = get_input("Maximum pred-difficulty?", [str(i) for i in range(101)])
-    pred_condition = get_input("Predator condition?", ["by_hand", "pin", "random", "none"], default = 1)
-    prey_condition = get_input("Prey condition?", ["by_hand", "pin", "random", "none"], default = 2)
+    if(pred_condition == None):
+        pred_condition = get_input("Predator condition?", ["by_hand", "pin", "random", "none"], default = 1)
+    if(prey_condition == None):
+        prey_condition = get_input("Prey condition?", ["by_hand", "pin", "random", "none"], default = 2)
     to_push_pred, to_push_prey, pred_win, rewards = episode(
       env, pred, prey, min_dif = int(min_dif), max_dif = int(max_dif), energy = energy, 
       pred_condition = pred_condition, prey_condition = prey_condition)
