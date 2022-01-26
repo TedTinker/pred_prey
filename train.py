@@ -124,7 +124,7 @@ class Trainer():
       if(iterations == 1): 
           pred_losses = np.expand_dims(pred_losses,0); prey_losses = np.expand_dims(prey_losses,0)
       self.losses = np.concatenate([self.losses, np.concatenate([pred_losses, prey_losses], axis = 1)])
-      if(keyboard.is_pressed('q') ): plot_losses(self.losses)
+      if(keyboard.is_pressed('q') ): plot_losses(self.losses, too_long = 300)
 
 
     def restart_or_done(self):

@@ -2,10 +2,9 @@ from train import Trainer
 
 # Train!
 trainer = Trainer("empty_arena", energy = 3000, pred_condition = 1, prey_condition = "pin",
-                  play_by_hand = True,
+                  play_by_hand = False,
                   save_folder = "empty_with_prey_pinned", agent_size = .8)
 trainer.train()
-trainer.test()
 trainer.close()
 
 
@@ -15,7 +14,6 @@ trainer = Trainer("big_arena", energy = 4000, pred_condition = 1, prey_condition
                   load_folder = "empty_with_prey_pinned",
                   agent_size = .8)
 trainer.train()
-trainer.test()
 trainer.close()
 
 
@@ -25,7 +23,6 @@ trainer = Trainer("final_arena", energy = 4000, pred_condition = 1, prey_conditi
                   load_folder = "big_with_prey_random",
                   agent_size = .8)
 trainer.train(how_often_to_show_and_save = 100, restarts = (), done = ("None", 2,2,2))
-trainer.test()
 trainer.close()
 
 
