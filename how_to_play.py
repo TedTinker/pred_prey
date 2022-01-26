@@ -25,7 +25,7 @@ def episode(
             else:
                 prey_action, prey_hc = prey.act(prey_rgbd, prey_speed, prey_energy, prey_action, prey_hc, prey_condition)
                 
-            new_obs, (r_pred, r_prey), done, dist_after = env.step(pred_action, prey_action)
+            new_obs, (r_pred, r_prey), done, win = env.step(pred_action, prey_action)
             (new_pred_rgbd, new_pred_speed, new_pred_energy, new_pred_action), \
             (new_prey_rgbd, new_prey_speed, new_prey_energy, new_prey_action) = new_obs  
             
@@ -44,7 +44,6 @@ def episode(
               (new_prey_rgbd, new_prey_speed, new_prey_energy, new_prey_action)
               
     env.close()
-    win = dist_after < env.too_close
     
     r=1
     reward_list_pred = add_discount([p[4] for p in to_push_pred], r if win else -r)

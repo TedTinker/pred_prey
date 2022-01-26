@@ -24,6 +24,7 @@ col_d       = .1     # Based on collision with walls
 
 def get_reward(agent, dist, closer, collision, pred_hits_prey, verbose = False):
     r_dist = (1/dist - .7) * dist_d if agent == "pred" else (-1/dist + .7) * dist_d
+    if(pred_hits_prey): r_dist = 2.5 if agent == "pred" else -2.5
     r_closer = closer * closer_d if agent == "pred" else -closer * closer_d
     r_col    = -col_d if collision else 0
     r = r_dist + r_closer + r_col
@@ -45,7 +46,7 @@ class PredPreyEnv():
       self, arena_name = "arena", GUI = False, agent_size = .5, image_size = 16, 
       min_speed = 10, max_speed = 50, max_angle_change = pi/2):
     
-    self.image_size = image_size; self.agent_size = agent_size; self.too_close = agent_size + .1
+    self.image_size = image_size; self.agent_size = agent_size
     self.min_speed = min_speed; self.max_speed = max_speed; self.max_angle_change = max_angle_change
     self.GUI = GUI; self.arena = Arena(arena_name, self.agent_size, self.GUI)
     self.already_constructed = False
@@ -221,8 +222,8 @@ class PredPreyEnv():
         get_reward("pred", dist_after, dist_closer, pred_collision, pred_hits_prey), 
         get_reward("prey", dist_after, dist_closer, prey_collision, pred_hits_prey))
     observations = self.get_obs(agent_name = "both")
-    done = True if dist_after <= self.too_close or self.pred_energy <= 0 else False
-    return(observations, rewards, done, dist_after)
+    done = True if pred_hits_prey or self.pred_energy <= 0 else False
+    return(observations, rewards, done, pred_hits_prey)
     
 
     

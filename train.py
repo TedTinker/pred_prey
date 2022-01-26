@@ -181,7 +181,7 @@ class Trainer():
                 delete_these(True, self.pred, self.prey, self.easy_wins, self.med_wins, self.hard_wins,
                    self.easy_wins_rolled, self.med_wins_rolled, self.hard_wins_rolled, self.losses)
                 self.restart()
-            if(done):
+            if(done or self.e >= max_epochs):
                 print("\n\nFinished!\n\n")
                 print("\n\nPredator condition: {}. Prey condition: {}.\n".format(
                     self.pred_condition, self.prey_condition))

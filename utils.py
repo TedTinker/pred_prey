@@ -165,7 +165,7 @@ def plot_wins(win_easy, win_med, win_hard, max_len = None, name = None, folder =
     win_easy = win_easy[-max_len:]
     win_med = win_med[-max_len:]
     win_hard = win_hard[-max_len:]
-  plt.plot(x, win_easy, color = "turquoise", label = "Easy for predatory")
+  plt.plot(x, win_easy, color = "turquoise", label = "Easy for predator")
   plt.plot(x, win_med, color = "gray", label = "Medium")
   plt.plot(x, win_hard, color = "lightcoral", label = "Hard")
   plt.ylim([0, 1])
