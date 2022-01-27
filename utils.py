@@ -142,7 +142,7 @@ def plot_losses(pred_losses, prey_losses, too_long = None, name = None, folder =
         plt.xlabel("Training iterations")
         ax1.set_ylabel("Actor losses")
         ax2.set_ylabel("Critic losses")
-        if(name!=None): save_plot("pred"+name, folder)
+        if(name!=None): save_plot("pred_"+name, folder)
         plt.show()
         plt.close()
     
@@ -168,7 +168,7 @@ def plot_losses(pred_losses, prey_losses, too_long = None, name = None, folder =
         plt.xlabel("Training iterations")
         ax1.set_ylabel("Actor losses")
         ax2.set_ylabel("Critic losses")
-        if(name!=None): save_plot("prey"+name, folder)
+        if(name!=None): save_plot("prey_"+name, folder)
         plt.show()
         plt.close()
   

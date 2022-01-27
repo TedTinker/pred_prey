@@ -133,7 +133,7 @@ class Trainer():
       self.pred_losses = np.concatenate([self.pred_losses, pred_losses])
       self.prey_losses = np.concatenate([self.prey_losses, prey_losses])
 
-      if(keyboard.is_pressed('q') ): plot_losses(pred_losses, prey_losses, too_long = 300)
+      if(keyboard.is_pressed('q') ): plot_losses(self.pred_losses, self.prey_losses, too_long = 300)
 
 
     def restart_or_done(self):
@@ -188,7 +188,7 @@ class Trainer():
             if(restart):
                 print("This isn't working. Starting again!")
                 delete_these(True, self.pred, self.prey, self.easy_wins, self.med_wins, self.hard_wins,
-                   self.easy_wins_rolled, self.med_wins_rolled, self.hard_wins_rolled, self.losses)
+                   self.easy_wins_rolled, self.med_wins_rolled, self.hard_wins_rolled, self.pred_losses, self.prey_losses)
                 self.restart()
             if(done or self.e >= max_epochs):
                 print("\n\nFinished!\n\n")

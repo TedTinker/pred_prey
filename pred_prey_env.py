@@ -166,7 +166,6 @@ class PredPreyEnv():
         col = True
     return(col)
 
-  # I want to use this instead of too_close, but it impacts rewards because of dist_closer
   def pred_hits_prey(self):
       return(0 < len(p.getContactPoints(
           self.pred, self.prey, physicsClientId = self.arena.physicsClient)))
