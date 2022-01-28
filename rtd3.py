@@ -24,10 +24,10 @@ from basics.utils import create_target, mean_of_unmasked_elements, polyak_update
 RecurrentBatch = namedtuple('RecurrentBatch', 'o s e a r d m')
 
 def as_probas(positive_values: np.array) -> np.array:
-  return positive_values / np.sum(positive_values)
+    return positive_values / np.sum(positive_values)
 
 def as_tensor_on_device(np_array: np.array):
-  return torch.tensor(np_array).float().to(device)
+    return torch.tensor(np_array).float().to(device)
 
 @gin.configurable(module=__name__)
 class RecurrentReplayBuffer:
@@ -273,37 +273,33 @@ class Summarizer(nn.Module):
     self.lstm.apply(init_weights)
     self.float()
 
-  def forward(self, x, speed, energy, action = None, hidden = None, return_hidden=False):
-    if(type(x) == np.ndarray): x = torch.from_numpy(x)
-    if(len(x.shape) == 3):     x = x.unsqueeze(0)
-    if(len(x.shape) == 4):
-      x = x.float().to(device).permute(0,3,1,2)
-      x = self.cnn(x).flatten(1).unsqueeze(1)
+  def forward(self, state, speed, energy, action = None, hidden = None, return_hidden=False):
+    if(len(state.shape) == 3):     state = state.unsqueeze(0)
+    if(len(state.shape) == 4):
+      state = state.float().to(device).permute(0,3,1,2)
+      state = self.cnn(state).flatten(1).unsqueeze(1)
     else:
-      x = x.float().to(device).permute(1,0,4,2,3)
-      x = torch.stack([self.cnn(step).flatten(1).unsqueeze(1) for step in x]).squeeze(2)
-      x = x.permute(1, 0, 2)            
+      state = state.float().to(device).permute(1,0,4,2,3)
+      state = torch.stack([self.cnn(step).flatten(1).unsqueeze(1) for step in state]).squeeze(2)
+      state = state.permute(1, 0, 2)            
     if(type(speed) != torch.Tensor):
       speed = torch.tensor(speed)
     speed = F.relu(speed).to(device)
-    if(len(speed.shape) != 3): speed = speed.view(x.shape[0],1,1)
+    if(len(speed.shape) != 3): speed = speed.view(state.shape[0],1,1)
     if(type(energy) != torch.Tensor):
       energy = torch.tensor(energy)
     energy = F.relu(energy).to(device) # / 100
-    if(len(energy.shape) != 3): energy = energy.view(x.shape[0],1,1)
-    if(action == None): action = torch.zeros((x.shape[0], 1, 2))
-    else: 
-      while(len(action.shape) != 3):
-        action = action.unsqueeze(0)
-    x = torch.cat([x, speed, energy, action.to(device)], -1)
+    if(len(energy.shape) != 3): energy = energy.view(state.shape[0],1,1)
+    while(len(action.shape) != 3):
+      action = action.unsqueeze(0)
+    state = torch.cat([state, speed, energy, action.to(device)], -1)
     self.lstm.flatten_parameters()
-    if(hidden == None): x, hidden = self.lstm(x)
-    else:           
-      x, hidden = self.lstm(x.float(), (hidden[0].float(), hidden[1].float()))
-    if(x.shape[1] == 1):
-      x = x[:,-1,:]
-      x = x.flatten(1)
-    summary = F.relu(x)
+    if(hidden == None): state, hidden = self.lstm(state)
+    else:               state, hidden = self.lstm(state.float(), (hidden[0].float(), hidden[1].float()))
+    if(state.shape[1] == 1):
+      state = state[:,-1,:]
+      state = state.flatten(1)
+    summary = F.relu(state)
     
     if return_hidden: return summary, hidden
     else:             return summary

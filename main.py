@@ -64,6 +64,13 @@ trainer = Trainer("big_arena", energy = 4000, pred_condition = 0, prey_condition
 trainer.test()
 trainer.close()
 
+trainer = Trainer("big_arena", energy = 4000, pred_condition = 0, prey_condition = 0,
+                  save_folder = "default", 
+                  load_folder = "big",
+                  agent_size = .8)
+trainer.test()
+trainer.close()
+
 trainer = Trainer("final_arena", energy = 4000, pred_condition = 0, prey_condition = 0,
                   save_folder = "default", 
                   load_folder = "final",
