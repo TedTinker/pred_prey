@@ -129,7 +129,7 @@ class Trainer():
       if(self.training_agent in ["prey", "both"]):
           prey_losses = self.prey.update_networks(batch_size = 32, iterations = iterations)
       else: prey_losses = np.array([[None]*3]*iterations)
-      if(iterations == 1):  pred_losses = np.expand_dims(pred_losses,0); pred_losses = np.expand_dims(pred_losses,0)
+      if(iterations == 1):  pred_losses = np.expand_dims(pred_losses,0); prey_losses = np.expand_dims(prey_losses,0)
       self.pred_losses = np.concatenate([self.pred_losses, pred_losses])
       self.prey_losses = np.concatenate([self.prey_losses, prey_losses])
 
