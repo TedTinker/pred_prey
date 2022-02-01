@@ -6,7 +6,8 @@ from tqdm import tqdm
 import keyboard
 from math import pi
 
-from utils import delete_these, get_rolling_average, \
+from utils import parameters as para
+from utils import parameters, delete_these, get_rolling_average, \
     duration, reset_start_time, remove_folder, make_folder, plot_wins, plot_losses, plot_rewards, \
     save_pred_prey, load_pred_prey
 from pred_prey_env import PredPreyEnv
@@ -21,37 +22,29 @@ from rtd3 import RecurrentTD3
 
 class Trainer():
     def __init__(
-            self, arena_name, energy = 3000, training_agent = "both", 
-            pred_condition = 0, prey_condition = 0, play_by_hand = False,
+            self, para = para, training_agent = "both", play_by_hand = False,
             save_folder = "default", load_folder = None, load_name = "last",
-            agent_size = .5, image_size = 16, min_speed = 10, max_speed = 50, max_angle_change = pi/2, 
             restart_if = {"pred" : {500 : {"hard" : .1}}},
             done_if =    {"pred" : {100 : {"easy" : .99, "med" : .99, "hard" : .95}}},
             difficulty_dic = {"easy" : (0,  0), "med"  : (0,  100), "hard" : (100,100)}):
         
+        self.para = para
         self.training_agent = training_agent
         self.attempts = 0
-        self.arena_name = arena_name; self.energy = energy
-        self.pred_condition, self.start_pred_condition = pred_condition, pred_condition
-        self.prey_condition, self.start_prey_condition = prey_condition, prey_condition
+        self.start_pred_condition = self.para.pred_condition
+        self.start_prey_condition = self.para.prey_condition
         self.save_folder = save_folder
         self.load_folder = load_folder; self.load_name = load_name
         
-        self.env = PredPreyEnv(self.arena_name, GUI = False, 
-                               image_size = image_size, min_speed = min_speed, 
-                               max_speed = max_speed, max_angle_change = max_angle_change,
-                               agent_size = agent_size)
-        self.env_gui = PredPreyEnv(self.arena_name, GUI = True,
-                                   image_size = image_size, min_speed = min_speed, 
-                                   max_speed = max_speed, max_angle_change = max_angle_change,
-                                   agent_size = agent_size)
+        self.env = PredPreyEnv(para, GUI = False)
+        self.env_gui = PredPreyEnv(para, GUI = True)
         self.restart_if = restart_if; self.done_if = done_if
 
         self.pred_episodes, self.prey_episodes = None, None
         self.restart()
         if(play_by_hand):
             self.pred_episodes, self.prey_episodes = hand_episodes(
-                self.env_gui, self.pred, self.prey, self.energy,
+                self.env_gui, self.pred, self.prey,
                 "by_hand", self.prey_condition)
         self.difficulty_dic = difficulty_dic
     
@@ -69,8 +62,8 @@ class Trainer():
         self.pred.episodes = self.pred_episodes
         self.prey.episodes = self.prey_episodes
       save_pred_prey(self.pred, self.prey, post = "0", folder = self.save_folder)
-      self.pred_condition = self.start_pred_condition
-      self.prey_condition = self.start_prey_condition
+      self.para.pred_condition = self.start_pred_condition
+      self.para.prey_condition = self.start_prey_condition
       self.easy_wins = []; self.med_wins = []; self.hard_wins = []
       self.easy_wins_rolled = []; self.med_wins_rolled = []; self.hard_wins_rolled = []
       self.pred_losses = np.array([[None]*3])
@@ -90,8 +83,7 @@ class Trainer():
       else:    env = self.env
       
       to_push_pred, to_push_prey, pred_win, rewards = episode(
-          env, self.pred, self.prey, min_dif = min_dif, max_dif = max_dif, energy = self.energy,
-          pred_condition = self.pred_condition, prey_condition = self.prey_condition, GUI = GUI)
+          env, self.pred, self.prey, min_dif = min_dif, max_dif = max_dif, GUI = GUI)
       if(keyboard.is_pressed('q') ): plot_rewards(rewards)
       
       if(push):
@@ -115,10 +107,10 @@ class Trainer():
       self.hard_wins.append(win)
       self.hard_wins_rolled.append(get_rolling_average(self.hard_wins))
     
-      if(type(self.pred_condition) in [int, float]):
-          self.pred_condition *= .99
-      if(type(self.prey_condition) in [int, float]):
-          self.prey_condition *= .99
+      if(type(self.para.pred_condition) in [int, float]):
+          self.para.pred_condition *= .99
+      if(type(self.para.prey_condition) in [int, float]):
+          self.para.prey_condition *= .99
       
       iterations = 4
       if(self.training_agent in ["pred", "both"]):
@@ -177,7 +169,7 @@ class Trainer():
             if(self.e % 5 == 0):  
                 print("\nEpoch {}, {} attempt(s). {}.".format(self.e, self.attempts, duration()))
                 print("Predator condition: {}. Prey condition: {}.".format(
-                    self.pred_condition, self.prey_condition))
+                    self.para.pred_condition, self.para.prey_condition))
             self.epoch()
             if(self.e % how_often_to_show_and_save == 0): 
                 plot_wins(self.easy_wins_rolled, self.med_wins_rolled, self.hard_wins_rolled, name = "wins_{}".format(self.e), folder = self.save_folder)
@@ -193,7 +185,7 @@ class Trainer():
             if(done or self.e >= max_epochs):
                 print("\n\nFinished!\n\n")
                 print("\n\nPredator condition: {}. Prey condition: {}.\n".format(
-                    self.pred_condition, self.prey_condition))
+                    self.para.pred_condition, self.para.prey_condition))
                 save_pred_prey(self.pred, self.prey, post = "last", folder = self.save_folder)
                 plot_wins(self.easy_wins_rolled, self.med_wins_rolled, self.hard_wins_rolled, name = "wins_last".format(self.e), folder = self.save_folder)
                 plot_losses(self.pred_losses, self.prey_losses, too_long = None, name = "losses".format(self.e), folder = self.save_folder)

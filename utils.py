@@ -1,3 +1,44 @@
+# Parameters for an arena.
+import argparse
+from math import pi
+
+def get_args():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--arena_name',             type=str,   default="empty_arena")    
+    
+    parser.add_argument('--pred_condition',                     default=1)
+    parser.add_argument('--pred_energy',            type=float, default=3000)
+    parser.add_argument('--pred_energy_per_speed',  type=float, default=1)
+    parser.add_argument('--pred_size',              type=float, default=.8)
+    parser.add_argument('--pred_image_size',        type=int,   default=16)
+    parser.add_argument('--pred_start_speed',       type=float, default=10)
+    parser.add_argument('--pred_min_speed',         type=float, default=10)
+    parser.add_argument('--pred_max_speed',         type=float, default=50)
+    parser.add_argument('--pred_max_yaw_change',    type=float, default=pi/2)
+    parser.add_argument('--pred_reward_dist',       type=float, default=-.1)
+    parser.add_argument('--pred_reward_dist_closer',type=float, default=10)
+    parser.add_argument('--pred_reward_collision',  type=float, default=-1)
+    
+    parser.add_argument('--prey_condition',                     default="pin")
+    parser.add_argument('--prey_energy',            type=float, default=3000)
+    parser.add_argument('--prey_energy_per_speed',  type=float, default=1)
+    parser.add_argument('--prey_size',              type=float, default=.8)
+    parser.add_argument('--prey_image_size',        type=int,   default=16)
+    parser.add_argument('--prey_start_speed',       type=float, default=10)
+    parser.add_argument('--prey_min_speed',         type=float, default=10)
+    parser.add_argument('--prey_max_speed',         type=float, default=50)
+    parser.add_argument('--prey_max_yaw_change',    type=float, default=pi/2)
+    parser.add_argument('--prey_reward_dist',       type=float, default=.1)
+    parser.add_argument('--prey_reward_dist_closer',type=float, default=-10)
+    parser.add_argument('--prey_reward_collision',  type=float, default=-1)
+    
+    return parser.parse_args()
+
+parameters = get_args()
+
+
+
+
 ### A few utilities
 import os
 os.environ["KMP_DUPLICATE_LIB_OK"]="TRUE" # I don't know what this is, but it's necessary. 
@@ -67,6 +108,13 @@ def get_rolling_average(wins, roll = 100):
     if(len(wins) < roll):
         return(sum(wins)/len(wins))
     return(sum(wins[-roll:])/roll)       
+
+
+# How to add discount to a list.
+def add_discount(rewards, last, GAMMA = .9):
+    discounts = [last * (GAMMA**i) for i in range(len(rewards))]
+    discounts.reverse()
+    return([r + d for r, d in zip(rewards, discounts)])
             
             
             

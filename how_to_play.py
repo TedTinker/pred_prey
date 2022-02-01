@@ -8,22 +8,21 @@ from pred_prey_env import add_discount
 
 
 def episode(
-        env, pred, prey, min_dif = 0, max_dif = 100, energy = 3000,
-        pred_condition = 0, prey_condition = 0, GUI = False):
+        env, pred, prey, min_dif = 0, max_dif = 100, GUI = False):
     
     (pred_rgbd, pred_speed, pred_energy, pred_action), \
-    (prey_rgbd, prey_speed, prey_energy, prey_action) = env.reset(min_dif, max_dif, energy)  
+    (prey_rgbd, prey_speed, prey_energy, prey_action) = env.reset(min_dif, max_dif)  
     pred_hc, prey_hc  = None, None
     to_push_pred, to_push_prey = [], []
     done = False
     while(done == False):
         with torch.no_grad():
-            if(pred_condition == "by_hand"):  pred_action = move_by_hand(env, "pred")
+            if(env.para.pred_condition == "by_hand"):  pred_action = move_by_hand(env, "pred")
             else:
-                pred_action, pred_hc = pred.act(pred_rgbd, pred_speed, pred_energy, pred_action, pred_hc, pred_condition)
-            if(prey_condition == "by_hand"):  prey_action = move_by_hand(env, "prey")
+                pred_action, pred_hc = pred.act(pred_rgbd, pred_speed, pred_energy, pred_action, pred_hc, env.para.pred_condition)
+            if(env.para.prey_condition == "by_hand"):  prey_action = move_by_hand(env, "prey")
             else:
-                prey_action, prey_hc = prey.act(prey_rgbd, prey_speed, prey_energy, prey_action, prey_hc, prey_condition)
+                prey_action, prey_hc = prey.act(prey_rgbd, prey_speed, prey_energy, prey_action, prey_hc, env.para.prey_condition)
                 
             new_obs, (r_pred, r_prey), done, win = env.step(pred_action, prey_action)
             (new_pred_rgbd, new_pred_speed, new_pred_energy, new_pred_action), \

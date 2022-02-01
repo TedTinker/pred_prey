@@ -3,52 +3,25 @@ import numpy as np
 import pybullet as p
 from math import degrees, pi, cos, sin
 
+from utils import add_discount, parameters as para
 from arena import get_physics, Arena
 
-
-
-
-
-  
-
-### The arena environment
     
 from matplotlib import pyplot as plt
 from torchvision.transforms.functional import resize
 
 
-# How are agents rewarded/punished each step? 
-dist_d      = .1     # Based on distance
-closer_d    = 10     # Based on distance closer
-col_d       = .1     # Based on collision with walls
-
-def get_reward(agent, dist, closer, collision, pred_hits_prey, verbose = False):
-    r_dist = (1/dist - .7) * dist_d if agent == "pred" else (-1/dist + .7) * dist_d
-    if(pred_hits_prey): r_dist = 2.5 if agent == "pred" else -2.5
-    r_closer = closer * closer_d if agent == "pred" else -closer * closer_d
-    r_col    = -col_d if collision else 0
-    r = r_dist + r_closer + r_col
-    if(verbose):
-        print("\n{} reward {}:\n\t{} from dist,\n\t{} from dist closer,\n\t{} from collision.".format(
-            agent, round(r,3), round(r_dist,3), round(r_closer,3), round(r_col, 3)))
-    return(r)
-
-def add_discount(rewards, last, GAMMA = .9):
-    discounts = [last * (GAMMA**i) for i in range(len(rewards))]
-    discounts.reverse()
-    return([r + d for r, d in zip(rewards, discounts)])
 
 
 
 # Made an environment! 
 class PredPreyEnv():   
   def __init__(
-      self, arena_name = "arena", GUI = False, agent_size = .5, image_size = 16, 
-      min_speed = 10, max_speed = 50, max_angle_change = pi/2):
+      self, para = para, GUI = False):
     
-    self.image_size = image_size; self.agent_size = agent_size
-    self.min_speed = min_speed; self.max_speed = max_speed; self.max_angle_change = max_angle_change
-    self.GUI = GUI; self.arena = Arena(arena_name, self.agent_size, self.GUI)
+    self.para = para
+    self.GUI = GUI
+    self.arena = Arena(para, self.GUI)
     self.already_constructed = False
     self.pred, self.prey = None, None
     self.steps, self.resets = 0, 0
@@ -64,14 +37,14 @@ class PredPreyEnv():
     if(forever):
       p.disconnect(self.arena.physicsClient)  
 
-  def reset(self, min_dif = 0, max_dif = 100, energy = 3000):
+  def reset(self, min_dif = 0, max_dif = 100):
     self.close()
     self.resets += 1; self.steps = 0
     (self.pred, self.pred_pos, self.pred_yaw, self.pred_spe),\
     (self.prey, self.prey_pos, self.prey_yaw, self.prey_spe), wall_ids = \
-        self.arena.start_arena(self.already_constructed, min_dif, max_dif, self.min_speed)
+        self.arena.start_arena(self.already_constructed, min_dif, max_dif)
     if(self.already_constructed == False): self.wall_ids = wall_ids; self.already_constructed = True
-    self.pred_energy, self.prey_energy = energy, energy
+    self.pred_energy, self.prey_energy = self.para.pred_energy, self.para.prey_energy
     self.pred_action, self.prey_action = torch.tensor([0,0]), torch.tensor([0,0])
     return(self.get_obs())
 
@@ -80,9 +53,11 @@ class PredPreyEnv():
     elif(agent_name == "pred"): 
       yaw, pos = self.pred_yaw, self.pred_pos
       speed, energy, action = self.pred_spe, self.pred_energy, self.pred_action
+      image_size = self.para.pred_image_size
     elif(agent_name == "prey"): 
       yaw, pos = self.prey_yaw, self.prey_pos
       speed, energy, action = self.prey_spe, self.prey_energy, self.prey_action
+      image_size = self.para.prey_image_size
     else: print("Not a good agent."); return
 
     x, y = cos(yaw), sin(yaw)
@@ -102,7 +77,7 @@ class PredPreyEnv():
     d = np.expand_dims(depth, axis=-1)
     rgbd = np.concatenate([rgb, d], axis = -1)
     rgbd = torch.from_numpy(rgbd).float()
-    rgbd = resize(rgbd.permute(-1,0,1), (self.image_size, self.image_size)).permute(1,2,0)
+    rgbd = resize(rgbd.permute(-1,0,1), (image_size, image_size)).permute(1,2,0)
     return(rgbd, speed, energy, action)
 
   def render(self, agent_name = "both"):
@@ -191,16 +166,39 @@ class PredPreyEnv():
         agent_name, round(degrees(old_yaw)), round(degrees(yaw_change)), round(degrees(new_yaw))))
       print("Old speed:\t{}\nNew speed:\t{}".format(old_speed, speed))
 
-  def unnormalize(self, action): # from (-1, 1) to (min, max)
-    yaw = action[0].clip(-1,1).item() * self.max_angle_change
-    spe = self.min_speed + ((action[1].clip(-1,1).item() + 1)/2) * (self.max_speed - self.min_speed)
+  def unnormalize(self, action, agent_name): # from (-1, 1) to (min, max)
+    if(agent_name == "pred"): 
+        max_angle_change = self.para.pred_max_yaw_change
+        min_speed = self.para.pred_min_speed
+        max_speed = self.para.pred_max_speed
+    else:                     
+        max_angle_change = self.para.prey_max_yaw_change
+        min_speed = self.para.prey_min_speed
+        max_speed = self.para.prey_max_speed
+    yaw = action[0].clip(-1,1).item() * max_angle_change
+    spe = min_speed + ((action[1].clip(-1,1).item() + 1)/2) * (max_speed - min_speed)
     return(yaw, spe)
+
+  def get_reward(self, agent, dist, closer, collision, pred_hits_prey, verbose = False):
+        dist_d = self.para.pred_reward_dist if agent == "pred" else self.para.prey_reward_dist
+        closer_d = self.para.pred_reward_dist_closer if agent == "pred" else self.para.prey_reward_dist_closer
+        col_d = self.para.pred_reward_collision if agent == "pred" else self.para.prey_reward_collision
+        
+        r_dist = (1/dist - .7) * dist_d
+        if(pred_hits_prey): r_dist = 2.5 if agent == "pred" else -2.5
+        r_closer = closer * closer_d
+        r_col    = -col_d if collision else 0
+        r = r_dist + r_closer + r_col
+        if(verbose):
+            print("\n{} reward {}:\n\t{} from dist,\n\t{} from dist closer,\n\t{} from collision.".format(
+                agent, round(r,3), round(r_dist,3), round(r_closer,3), round(r_col, 3)))
+        return(r)
   
   def step(self, pred_action, prey_action):
     self.pred_action, self.prey_action = pred_action, prey_action
     self.steps += 1
-    yaw_1, spe_1 = self.unnormalize(pred_action)
-    yaw_2, spe_2 = self.unnormalize(prey_action)
+    yaw_1, spe_1 = self.unnormalize(pred_action, "pred")
+    yaw_2, spe_2 = self.unnormalize(prey_action, "prey")
     if(self.pred_energy <= 0): spe_1 = 0
     if(self.prey_energy <= 0): spe_2 = 0
     self.change_velocity("pred", yaw_1, spe_1)
@@ -218,8 +216,8 @@ class PredPreyEnv():
     pred_collision, prey_collision = self.collisions()
     pred_hits_prey = self.pred_hits_prey()
     rewards = (
-        get_reward("pred", dist_after, dist_closer, pred_collision, pred_hits_prey), 
-        get_reward("prey", dist_after, dist_closer, prey_collision, pred_hits_prey))
+        self.get_reward("pred", dist_after, dist_closer, pred_collision, pred_hits_prey), 
+        self.get_reward("prey", dist_after, dist_closer, prey_collision, pred_hits_prey))
     observations = self.get_obs(agent_name = "both")
     done = True if pred_hits_prey or self.pred_energy <= 0 else False
     return(observations, rewards, done, pred_hits_prey)
@@ -229,7 +227,7 @@ class PredPreyEnv():
     
 
 if __name__ == "__main__":
-    env = PredPreyEnv(arena_name = "big_arena")
+    env = PredPreyEnv()
     env.reset()   
     env.render() 
     env.close(forever = True)

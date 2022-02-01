@@ -23,16 +23,17 @@ from itertools import product
 from scipy.stats import percentileofscore
 import random
 
+from utils import parameters as para
+
 def pythagorean(pos_1, pos_2):
   return ((pos_1[0] - pos_2[0])**2 + (pos_1[1] - pos_2[1])**2)**.5
 
 class Arena():
-  def __init__(self, arena_name, agent_size = .5, GUI = False):
-    self.arena_name = arena_name
-    self.arena_map = cv2.imread("arenas/" + arena_name + ".png")
+  def __init__(self, para = para, GUI = False):
+    self.para = para
+    self.arena_map = cv2.imread("arenas/" + para.arena_name + ".png")
     self.w, self.h, _ = self.arena_map.shape
     self.physicsClient = get_physics(GUI, self.w, self.h)
-    self.agent_size = agent_size
     self.open_spots = [(x,y) for x, y in product(range(self.w), range(self.h)) \
                       if self.arena_map[x,y].tolist() == [255, 255, 255]]
     num_open_spots = range(len(self.open_spots))
@@ -59,7 +60,7 @@ class Arena():
 
   def start_arena(
     self, already_constructed = False,
-    min_dif = None, max_dif = None, start_speed = 0):
+    min_dif = None, max_dif = None):
     
     wall_ids = []
     if(not already_constructed):
@@ -75,21 +76,21 @@ class Arena():
                 
     pred_pos, prey_pos = self.get_pair_with_difficulty(min_dif, max_dif)
     pred_yaw, prey_yaw = random.uniform(0, 2*pi), random.uniform(0, 2*pi)
-    pred_spe, prey_spe = start_speed, start_speed
+    pred_spe, prey_spe = self.para.pred_start_speed, self.para.prey_start_speed
     
     file = "sphere2red.urdf"
     #file = "pred_prey.urdf" # How can I make my own robot-shape? 
     
     pos = (pred_pos[0], pred_pos[1], .5)
     ors = p.getQuaternionFromEuler([0,0,pred_yaw])
-    pred = p.loadURDF(file,pos,ors,globalScaling = self.agent_size, physicsClientId = self.physicsClient)
+    pred = p.loadURDF(file,pos,ors,globalScaling = self.para.pred_size, physicsClientId = self.physicsClient)
     x, y = cos(pred_yaw)*pred_spe, sin(pred_yaw)*pred_spe
     p.resetBaseVelocity(pred, (x,y,0),(0,0,0), physicsClientId = self.physicsClient)
     p.changeVisualShape(pred, -1, rgbaColor = [1,0,0,1], physicsClientId = self.physicsClient)
     
     pos = (prey_pos[0], prey_pos[1], .5)
     ors = p.getQuaternionFromEuler([0,0,prey_yaw])
-    prey = p.loadURDF(file,pos,ors,globalScaling = self.agent_size, physicsClientId = self.physicsClient)
+    prey = p.loadURDF(file,pos,ors,globalScaling = self.para.prey_size, physicsClientId = self.physicsClient)
     x, y = cos(prey_yaw)*prey_spe, sin(prey_yaw)*prey_spe
     p.resetBaseVelocity(prey, (x,y,0),(0,0,0), physicsClientId = self.physicsClient)
     p.changeVisualShape(prey, -1, rgbaColor = [0,0,1,1], physicsClientId = self.physicsClient)
@@ -100,7 +101,7 @@ class Arena():
 
 
 if __name__ == "__main__":
-  arena = Arena("empty_arena")
+  arena = Arena()
   arena.get_pair_with_difficulty(min_dif = 0, max_dif = 0, verbose = True)
   arena.get_pair_with_difficulty(min_dif = 50, max_dif = 50, verbose = True)
   arena.get_pair_with_difficulty(min_dif = 100, max_dif = 100, verbose = True)

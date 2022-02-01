@@ -1,9 +1,10 @@
+from utils import parameters as para
 from train import Trainer
 
 # Train!
-trainer = Trainer("empty_arena", energy = 3000, pred_condition = 1, prey_condition = "pin",
+trainer = Trainer(para, 
                   training_agent = "pred", play_by_hand = False,
-                  save_folder = "empty_with_prey_pinned", agent_size = .8)
+                  save_folder = "empty_with_prey_pinned")
 trainer.train()
 trainer.close()
 
