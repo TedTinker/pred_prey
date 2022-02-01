@@ -36,7 +36,11 @@ def get_args():
 
 parameters = get_args()
 
-
+def change_para(**kwargs):
+    para = get_args()
+    for key, value in kwargs.items():
+        setattr(para, key, value)
+    return(para)
 
 
 ### A few utilities
@@ -260,7 +264,9 @@ def save_pred_prey(pred, prey, post = "", folder = "default"):
     torch.save(pred.state_dict(), "saves/" + folder + "/preds/pred_{}.pt".format(post))
     torch.save(prey.state_dict(), "saves/" + folder + "/preys/prey_{}.pt".format(post))
 
-def load_pred_prey(pred, prey, post = "last", folder = "default"):
-    pred.load_state_dict(torch.load("saves/" + folder + "/preds/pred_{}.pt".format(post)))
-    prey.load_state_dict(torch.load("saves/" + folder + "/preys/prey_{}.pt".format(post)))
+def load_pred_prey(pred, prey, load = "both", post = "last", folder = "default"):
+    if(load == "both" or load == "pred"):
+        pred.load_state_dict(torch.load("saves/" + folder + "/preds/pred_{}.pt".format(post)))
+    if(load == "both" or load == "prey"):
+        prey.load_state_dict(torch.load("saves/" + folder + "/preys/prey_{}.pt".format(post)))
     return(pred, prey)
