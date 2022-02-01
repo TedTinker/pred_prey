@@ -45,15 +45,15 @@ class RecurrentReplayBuffer:
     
         capacity = 1000
       
-        self.o = np.zeros((capacity, max_episode_len + 1) + o_dim) # to-do: , dtype='float32'
-        self.s = np.zeros((capacity, max_episode_len + 1, 1))
-        self.e = np.zeros((capacity, max_episode_len + 1, 1))
-        self.a = np.zeros((capacity, max_episode_len, a_dim))
-        self.r = np.zeros((capacity, max_episode_len, 1))
-        self.d = np.zeros((capacity, max_episode_len, 1))
-        self.m = np.zeros((capacity, max_episode_len, 1))
-        self.ep_len = np.zeros((capacity,))
-        self.ready_for_sampling = np.zeros((capacity,))
+        self.o = np.zeros((capacity, max_episode_len + 1) + o_dim, dtype='float32')
+        self.s = np.zeros((capacity, max_episode_len + 1, 1), dtype='float32')
+        self.e = np.zeros((capacity, max_episode_len + 1, 1), dtype='float32')
+        self.a = np.zeros((capacity, max_episode_len, a_dim), dtype='float32')
+        self.r = np.zeros((capacity, max_episode_len, 1), dtype='float32')
+        self.d = np.zeros((capacity, max_episode_len, 1), dtype='float32')
+        self.m = np.zeros((capacity, max_episode_len, 1), dtype='float32')
+        self.ep_len = np.zeros((capacity,), dtype='float32')
+        self.ready_for_sampling = np.zeros((capacity,), dtype='float32')
       
         # pointers
       
