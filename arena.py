@@ -111,8 +111,10 @@ class Arena():
         p.resetBaseVelocity(prey, (x,y,0),(0,0,0), physicsClientId = self.physicsClient)
         p.changeVisualShape(prey, -1, rgbaColor = [0,0,1,1], physicsClientId = self.physicsClient)
         
-        return((pred, pred_pos, pred_yaw, pred_spe),
-               (prey, prey_pos, prey_yaw, prey_spe), wall_ids)
+        return(Agent(True,  pred, self.para.pred_energy, pred_pos, pred_yaw, pred_spe),
+               Agent(False, prey, self.para.prey_energy, prey_pos, prey_yaw, prey_spe), wall_ids)
+    
+        
 
 
 

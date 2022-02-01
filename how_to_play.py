@@ -30,11 +30,11 @@ def episode(env, pred, prey, min_dif = 0, max_dif = 100, GUI = False):
             # o, s, e, a, r, no, ns, d, cutoff
             to_push_pred.append(
                 (pred_rgbd, torch.tensor(pred_speed), torch.tensor(pred_energy), pred_action.cpu(), r_pred, 
-                new_pred_rgbd, torch.tensor(new_pred_speed), torch.tensor(env.pred_energy), torch.tensor(done).int(), torch.tensor(done)))
+                new_pred_rgbd, torch.tensor(new_pred_speed), torch.tensor(env.pred.energy), torch.tensor(done).int(), torch.tensor(done)))
                 
             to_push_prey.append(
                 (prey_rgbd, torch.tensor(prey_speed), torch.tensor(prey_energy), prey_action.cpu(), r_prey, 
-                new_prey_rgbd, torch.tensor(new_prey_speed), torch.tensor(env.prey_energy), torch.tensor(done), torch.tensor(done)))
+                new_prey_rgbd, torch.tensor(new_prey_speed), torch.tensor(env.prey.energy), torch.tensor(done), torch.tensor(done)))
                 
             (pred_rgbd, pred_speed, pred_energy, pred_action),  \
             (prey_rgbd, prey_speed, prey_energy, prey_action) = \
