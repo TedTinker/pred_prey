@@ -7,6 +7,7 @@ def get_args():
     parser.add_argument('--arena_name',             type=str,   default="empty_arena")    
     
     parser.add_argument('--pred_condition',                     default=1)
+    parser.add_argument('--pred_start',             type=int,   default=1)
     parser.add_argument('--pred_energy',            type=float, default=3000)
     parser.add_argument('--pred_energy_per_speed',  type=float, default=1)
     parser.add_argument('--pred_size',              type=float, default=.8)
@@ -20,6 +21,7 @@ def get_args():
     parser.add_argument('--pred_reward_collision',  type=float, default=-1)
     
     parser.add_argument('--prey_condition',                     default="pin")
+    parser.add_argument('--prey_start',             type=int,   default=1)
     parser.add_argument('--prey_energy',            type=float, default=3000)
     parser.add_argument('--prey_energy_per_speed',  type=float, default=1)
     parser.add_argument('--prey_size',              type=float, default=.8)

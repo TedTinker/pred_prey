@@ -49,25 +49,25 @@ class Trainer():
         self.difficulty_dic = difficulty_dic
     
     def restart(self):
-      reset_start_time()
-      remove_folder(self.save_folder)
-      make_folder(self.save_folder)
-      self.attempts += 1
-      self.e = 0
-      self.pred = RecurrentTD3(); self.prey = RecurrentTD3()
-      if(self.load_folder != None):
-          self.pred, self.prey = load_pred_prey(
-              self.pred, self.prey, post = self.load_name, folder = self.load_folder)
-      if(self.pred_episodes != None and self.prey_episodes != None):
-        self.pred.episodes = self.pred_episodes
-        self.prey.episodes = self.prey_episodes
-      save_pred_prey(self.pred, self.prey, post = "0", folder = self.save_folder)
-      self.para.pred_condition = self.start_pred_condition
-      self.para.prey_condition = self.start_prey_condition
-      self.easy_wins = []; self.med_wins = []; self.hard_wins = []
-      self.easy_wins_rolled = []; self.med_wins_rolled = []; self.hard_wins_rolled = []
-      self.pred_losses = np.array([[None]*3])
-      self.prey_losses = np.array([[None]*3])
+        reset_start_time()
+        remove_folder(self.save_folder)
+        make_folder(self.save_folder)
+        self.attempts += 1
+        self.e = 0
+        self.pred = RecurrentTD3(); self.prey = RecurrentTD3()
+        if(self.load_folder != None):
+            self.pred, self.prey = load_pred_prey(
+                self.pred, self.prey, post = self.load_name, folder = self.load_folder)
+        if(self.pred_episodes != None and self.prey_episodes != None):
+            self.pred.episodes = self.pred_episodes
+            self.prey.episodes = self.prey_episodes
+        save_pred_prey(self.pred, self.prey, post = "0", folder = self.save_folder)
+        self.para.pred_condition = self.start_pred_condition
+        self.para.prey_condition = self.start_prey_condition
+        self.easy_wins = []; self.med_wins = []; self.hard_wins = []
+        self.easy_wins_rolled = []; self.med_wins_rolled = []; self.hard_wins_rolled = []
+        self.pred_losses = np.array([[None]*3])
+        self.prey_losses = np.array([[None]*3])
       
     def close(self):
         self.env.close(forever = True)
@@ -76,56 +76,56 @@ class Trainer():
 
       
     def one_episode(self, difficulty = "med", push = True, GUI = False):
-      min_dif, max_dif = self.difficulty_dic[difficulty]
-      
-      if(GUI == False): GUI = keyboard.is_pressed('q') 
-      if(GUI): env = self.env_gui
-      else:    env = self.env
-      
-      to_push_pred, to_push_prey, pred_win, rewards = episode(
-          env, self.pred, self.prey, min_dif = min_dif, max_dif = max_dif, GUI = GUI)
-      if(keyboard.is_pressed('q') ): plot_rewards(rewards)
-      
-      if(push):
-          for i in range(len(to_push_pred)):
-              self.pred.episodes.push(to_push_pred[i])
-              self.prey.episodes.push(to_push_prey[i])
-          
-      return(int(pred_win), rewards)
+        min_dif, max_dif = self.difficulty_dic[difficulty]
+        
+        if(GUI == False): GUI = keyboard.is_pressed('q') 
+        if(GUI): env = self.env_gui
+        else:    env = self.env
+        
+        to_push_pred, to_push_prey, pred_win, rewards = episode(
+            env, self.pred, self.prey, min_dif = min_dif, max_dif = max_dif, GUI = GUI)
+        if(keyboard.is_pressed('q') ): plot_rewards(rewards)
+        
+        if(push):
+            for i in range(len(to_push_pred)):
+                self.pred.episodes.push(to_push_pred[i])
+                self.prey.episodes.push(to_push_prey[i])
+            
+        return(int(pred_win), rewards)
 
 
     def epoch(self):
-      win, rewards = self.one_episode("easy")
-      self.easy_wins.append(win)
-      self.easy_wins_rolled.append(get_rolling_average(self.easy_wins))
-    
-      win, rewards = self.one_episode("med")
-      self.med_wins.append(win)
-      self.med_wins_rolled.append(get_rolling_average(self.med_wins))
-    
-      win, rewards = self.one_episode("hard")
-      self.hard_wins.append(win)
-      self.hard_wins_rolled.append(get_rolling_average(self.hard_wins))
-    
-      if(type(self.para.pred_condition) in [int, float]):
-          self.para.pred_condition *= .99
-      if(type(self.para.prey_condition) in [int, float]):
-          self.para.prey_condition *= .99
+        win, rewards = self.one_episode("easy")
+        self.easy_wins.append(win)
+        self.easy_wins_rolled.append(get_rolling_average(self.easy_wins))
       
-      iterations = 4
-      if(self.training_agent in ["pred", "both"]):
-          pred_losses = self.pred.update_networks(batch_size = 32, iterations = iterations)
-      else: pred_losses = np.array([[None]*3]*iterations)
-      self.pred_losses = np.concatenate([self.pred_losses, pred_losses])
+        win, rewards = self.one_episode("med")
+        self.med_wins.append(win)
+        self.med_wins_rolled.append(get_rolling_average(self.med_wins))
       
-      if(self.training_agent in ["prey", "both"]):
-          prey_losses = self.prey.update_networks(batch_size = 32, iterations = iterations)
-      else: prey_losses = np.array([[None]*3]*iterations)
-      if(iterations == 1):  pred_losses = np.expand_dims(pred_losses,0); prey_losses = np.expand_dims(prey_losses,0)
-      self.pred_losses = np.concatenate([self.pred_losses, pred_losses])
-      self.prey_losses = np.concatenate([self.prey_losses, prey_losses])
-
-      if(keyboard.is_pressed('q') ): plot_losses(self.pred_losses, self.prey_losses, too_long = 300)
+        win, rewards = self.one_episode("hard")
+        self.hard_wins.append(win)
+        self.hard_wins_rolled.append(get_rolling_average(self.hard_wins))
+      
+        if(type(self.para.pred_condition) in [int, float]):
+            self.para.pred_condition *= .99
+        if(type(self.para.prey_condition) in [int, float]):
+            self.para.prey_condition *= .99
+        
+        iterations = 4
+        if(self.training_agent in ["pred", "both"]):
+            pred_losses = self.pred.update_networks(batch_size = 32, iterations = iterations)
+        else: pred_losses = np.array([[None]*3]*iterations)
+        self.pred_losses = np.concatenate([self.pred_losses, pred_losses])
+        
+        if(self.training_agent in ["prey", "both"]):
+            prey_losses = self.prey.update_networks(batch_size = 32, iterations = iterations)
+        else: prey_losses = np.array([[None]*3]*iterations)
+        if(iterations == 1):  pred_losses = np.expand_dims(pred_losses,0); prey_losses = np.expand_dims(prey_losses,0)
+        self.pred_losses = np.concatenate([self.pred_losses, pred_losses])
+        self.prey_losses = np.concatenate([self.prey_losses, prey_losses])
+    
+        if(keyboard.is_pressed('q') ): plot_losses(self.pred_losses, self.prey_losses, too_long = 300)
 
 
     def restart_or_done(self):
@@ -192,9 +192,9 @@ class Trainer():
                 break
     
     def test(self, size = 100):
-      self.pred.eval(); self.prey.eval()
-      pred_wins = 0
-      for i in range(size):
-          w, _ = self.one_episode(difficulty = "hard", push = False, GUI = True)
-          pred_wins += w
-      print("Predator wins {} out of {} games ({}%).".format(pred_wins, size, round(100*(pred_wins/size))))
+        self.pred.eval(); self.prey.eval()
+        pred_wins = 0
+        for i in range(size):
+            w, _ = self.one_episode(difficulty = "hard", push = False, GUI = True)
+            pred_wins += w
+        print("Predator wins {} out of {} games ({}%).".format(pred_wins, size, round(100*(pred_wins/size))))
