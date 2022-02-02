@@ -380,7 +380,7 @@ class RecurrentTD3(RecurrentOffPolicyRLAlgorithm):
         action_noise=0.1,  # standard deviation of action noise
         target_noise=0.2,  # standard deviation of target smoothing noise
         noise_clip=0.5,  # max abs value of target smoothing noise
-        policy_delay=4):
+        policy_delay=2):
         
         # hyper-parameters
       

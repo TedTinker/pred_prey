@@ -25,7 +25,7 @@ class Trainer():
             self, para = para, training_agent = "both", play_by_hand = False,
             save_folder = "default", load_folder = None, load_name = "last",
             restart_if = {"pred" : {500 : {"hard" : .1}}},
-            done_if =    {"pred" : {100 : {"easy" : .99, "med" : .99, "hard" : .95}}},
+            done_if =    {"pred" : {250 : {"easy" : .99, "med" : .99, "hard" : .95}}},
             difficulty_dic = {"easy" : (0,  0), "med"  : (0,  100), "hard" : (100,100)}):
         
         self.para = para
