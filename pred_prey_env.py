@@ -156,7 +156,7 @@ class PredPreyEnv():
             agent.action = action_list[i]
             yaw, spe = self.unnormalize(agent.action, agent.predator)
             if(agent.energy <= 0): spe = 0
-            agent.energy -= spe
+            agent.energy -= spe * get_arg(self.para, agent.predator, "energy_per_speed")
             self.change_velocity(agent, yaw, spe)
       
         dist_before = self.arena.agent_dist(self.agent_list[0].p_num, self.agent_list[1].p_num)
