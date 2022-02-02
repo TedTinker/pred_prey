@@ -3,14 +3,12 @@ import torch
 
 class Agent:
     def __init__(self, predator, p_num, energy, pos, yaw, spe):
-        self.predator = predator 
-        self.p_num = p_num
-        self.energy = energy
-        self.age = 0
-        self.to_push = []
-        self.action = torch.tensor([0.0, 0.0])
+        self.predator = predator; self.p_num = p_num; self.energy = energy
         self.pos = pos; self.yaw = yaw; self.spe = spe
+        self.age = 0
+        self.action = torch.tensor([0.0, 0.0])
         self.hidden = None
+        self.to_push = []
 
 
 
@@ -91,28 +89,45 @@ class Arena():
                   wall_ids.append(cube)
                     
         pred_pos, prey_pos = self.get_pair_with_difficulty(min_dif, max_dif)
-        pred_yaw, prey_yaw = random.uniform(0, 2*pi), random.uniform(0, 2*pi)
-        pred_spe, prey_spe = self.para.pred_start_speed, self.para.prey_start_speed
+        pred = self.make_agent(True, pred_pos)
+        prey = self.make_agent(False, prey_pos)
         
+        return(pred, prey, wall_ids)
+    
+    def make_agent(self, predator, pos):
+        yaw = random.uniform(0, 2*pi)
+        spe = self.para.pred_min_speed if predator else self.para.prey_min_speed
+        energy = self.para.pred_energy if predator else self.para.prey_energy
+        color = [1,0,0,1] if predator else [0,0,1,1]
         file = "sphere2red.urdf"
-        #file = "pred_prey.urdf" # How can I make my own robot-shape? 
         
-        pos = (pred_pos[0], pred_pos[1], .5)
-        ors = p.getQuaternionFromEuler([0,0,pred_yaw])
-        pred = p.loadURDF(file,pos,ors,globalScaling = self.para.pred_size, physicsClientId = self.physicsClient)
-        x, y = cos(pred_yaw)*pred_spe, sin(pred_yaw)*pred_spe
-        p.resetBaseVelocity(pred, (x,y,0),(0,0,0), physicsClientId = self.physicsClient)
-        p.changeVisualShape(pred, -1, rgbaColor = [1,0,0,1], physicsClientId = self.physicsClient)
+        pos = (pos[0], pos[1], .5)
+        ors = p.getQuaternionFromEuler([0,0,yaw])
+        p_num = p.loadURDF(file,pos,ors,
+                           globalScaling = self.para.pred_size if predator else self.para.prey_size, 
+                           physicsClientId = self.physicsClient)
+        x, y = cos(yaw)*spe, sin(yaw)*spe
+        p.resetBaseVelocity(p_num, (x,y,0),(0,0,0), physicsClientId = self.physicsClient)
+        p.changeVisualShape(p_num, -1, rgbaColor = color, physicsClientId = self.physicsClient)
+        agent = Agent(predator, p_num, energy, pos, yaw, spe)
+        return(agent)
+    
+    def make_flower(self):
+        pos   = random.choice(self.open_spots)
+        roll  = random.uniform(0, 2*pi)
+        pitch = random.uniform(0, 2*pi)
+        yaw   = random.uniform(0, 2*pi)
+        file  = "duck_vhacd.urdf"
         
-        pos = (prey_pos[0], prey_pos[1], .5)
-        ors = p.getQuaternionFromEuler([0,0,prey_yaw])
-        prey = p.loadURDF(file,pos,ors,globalScaling = self.para.prey_size, physicsClientId = self.physicsClient)
-        x, y = cos(prey_yaw)*prey_spe, sin(prey_yaw)*prey_spe
-        p.resetBaseVelocity(prey, (x,y,0),(0,0,0), physicsClientId = self.physicsClient)
-        p.changeVisualShape(prey, -1, rgbaColor = [0,0,1,1], physicsClientId = self.physicsClient)
-        
-        return(Agent(True,  pred, self.para.pred_energy, pred_pos, pred_yaw, pred_spe),
-               Agent(False, prey, self.para.prey_energy, prey_pos, prey_yaw, prey_spe), wall_ids)
+        pos = (pos[0], pos[1], .5)
+        ors = p.getQuaternionFromEuler([roll,pitch,yaw])
+        color = [random.uniform(0,1),random.uniform(0,1),random.uniform(0,1),1]
+        flower = p.loadURDF(file,pos,ors,
+                            globalScaling = self.para.flower_size,
+                            physicsClientId = self.physicsClient)
+        p.resetBaseVelocity(flower, (0,0,0),(0,0,0), physicsClientId = self.physicsClient)
+        p.changeVisualShape(flower, -1, rgbaColor = color, physicsClientId = self.physicsClient)
+        return(flower)
     
         
 

@@ -131,7 +131,7 @@ class PredPreyEnv():
         if(agent == "both"): return(self.collisions(self.pred.p_num), self.collisions(self.prey.p_num))
         col = False
         for wall in self.wall_ids:
-            if 0 < len(p.getContactPoints(agent.p_num, wall, physicsClientId = self.arena.physicsClient)):
+            if 0 < len(p.getContactPoints(agent, wall, physicsClientId = self.arena.physicsClient)):
                 col = True
         return(col)
 
