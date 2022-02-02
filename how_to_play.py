@@ -23,18 +23,18 @@ def episode(env, pred, prey, min_dif = 0, max_dif = 100, GUI = False):
             else:
                 prey_action, prey_hc = prey.act(prey_rgbd, prey_speed, prey_energy, prey_action, prey_hc, env.para.prey_condition)
                 
-            new_obs, (r_pred, r_prey), done, win = env.step(pred_action, prey_action)
+            new_obs, (r_pred, r_prey), done, win = env.step([pred_action, prey_action])
             (new_pred_rgbd, new_pred_speed, new_pred_energy, new_pred_action), \
             (new_prey_rgbd, new_prey_speed, new_prey_energy, new_prey_action) = new_obs  
             
             # o, s, e, a, r, no, ns, d, cutoff
             to_push_pred.append(
-                (pred_rgbd, torch.tensor(pred_speed), torch.tensor(pred_energy), pred_action.cpu(), r_pred, 
-                new_pred_rgbd, torch.tensor(new_pred_speed), torch.tensor(env.pred.energy), torch.tensor(done).int(), torch.tensor(done)))
+                (pred_rgbd, pred_speed, pred_energy, pred_action.cpu(), r_pred, 
+                new_pred_rgbd, new_pred_speed, new_pred_energy, torch.tensor(done).int(), torch.tensor(done)))
                 
             to_push_prey.append(
-                (prey_rgbd, torch.tensor(prey_speed), torch.tensor(prey_energy), prey_action.cpu(), r_prey, 
-                new_prey_rgbd, torch.tensor(new_prey_speed), torch.tensor(env.prey.energy), torch.tensor(done), torch.tensor(done)))
+                (prey_rgbd, prey_speed, prey_energy, prey_action.cpu(), r_prey, 
+                new_prey_rgbd, new_prey_speed, new_prey_energy, torch.tensor(done), torch.tensor(done)))
                 
             (pred_rgbd, pred_speed, pred_energy, pred_action),  \
             (prey_rgbd, prey_speed, prey_energy, prey_action) = \
