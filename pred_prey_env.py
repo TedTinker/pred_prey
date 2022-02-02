@@ -3,7 +3,7 @@ import numpy as np
 import pybullet as p
 from math import degrees, pi, cos, sin
 
-from utils import add_discount, parameters as para
+from utils import get_arg, parameters as para
 from arena import get_physics, Arena
 
     
@@ -40,7 +40,7 @@ class PredPreyEnv():
         return([self.get_obs(agent) for agent in self.agent_list])
 
     def get_obs(self, agent):
-        image_size = self.para.pred_image_size if agent.predator else self.para.prey_image_size
+        image_size = get_arg(self.para, agent.predator, "image_size")
 
         x, y = cos(agent.yaw), sin(agent.yaw)
         view_matrix = p.computeViewMatrix(
@@ -127,22 +127,17 @@ class PredPreyEnv():
             print("Old speed:\t{}\nNew speed:\t{}".format(old_speed, speed))
 
     def unnormalize(self, action, predator): # from (-1, 1) to (min, max)
-        if(predator): 
-            max_angle_change = self.para.pred_max_yaw_change
-            min_speed = self.para.pred_min_speed
-            max_speed = self.para.pred_max_speed
-        else:                     
-            max_angle_change = self.para.prey_max_yaw_change
-            min_speed = self.para.prey_min_speed
-            max_speed = self.para.prey_max_speed
+        max_angle_change = get_arg(self.para, predator, "max_yaw_change")
+        min_speed = get_arg(self.para, predator, "min_speed")
+        max_speed = get_arg(self.para, predator, "max_speed")
         yaw = action[0].clip(-1,1).item() * max_angle_change
         spe = min_speed + ((action[1].clip(-1,1).item() + 1)/2) * (max_speed - min_speed)
         return(yaw, spe)
 
     def get_reward(self, agent, dist, closer, collision, pred_hits_prey, verbose = False):
-        dist_d = self.para.pred_reward_dist if agent.predator else self.para.prey_reward_dist
-        closer_d = self.para.pred_reward_dist_closer if agent.predator else self.para.prey_reward_dist_closer
-        col_d = self.para.pred_reward_collision if agent.predator else self.para.prey_reward_collision
+        dist_d = get_arg(self.para, agent.predator, "reward_dist")
+        closer_d = get_arg(self.para, agent.predator, "reward_dist_closer")
+        col_d = get_arg(self.para, agent.predator, "reward_collision")
         
         r_dist = (1/dist - .7) * dist_d
         if(pred_hits_prey): r_dist = 2.5 if agent.predator else -2.5

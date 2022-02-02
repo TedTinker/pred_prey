@@ -1,7 +1,6 @@
 import torch
 
-from utils import get_input, plot_rewards
-from pred_prey_env import add_discount
+from utils import get_input, plot_rewards, add_discount
 
 
 

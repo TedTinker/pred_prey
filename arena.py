@@ -38,6 +38,7 @@ from scipy.stats import percentileofscore
 import random
 
 from utils import parameters as para
+from utils import get_arg
 
 def pythagorean(pos_1, pos_2):
     return ((pos_1[0] - pos_2[0])**2 + (pos_1[1] - pos_2[1])**2)**.5
@@ -59,7 +60,7 @@ class Arena():
         self.already_constructed = False
   
     def get_pair_with_difficulty(self, min_dif = 0, max_dif = 100, verbose = False):
-        if(max_dif == None): max_dif = min_dif
+        if(max_dif == None):   max_dif = min_dif
         if(min_dif > max_dif): min_dif = max_dif
         pair_list = []
         while(len(pair_list) == 0):
@@ -90,13 +91,12 @@ class Arena():
         pred_pos, prey_pos = self.get_pair_with_difficulty(min_dif, max_dif)
         pred = self.make_agent(True, pred_pos)
         prey = self.make_agent(False, prey_pos)
-        
         return([pred, prey])
     
     def make_agent(self, predator, pos):
         yaw = random.uniform(0, 2*pi)
-        spe = self.para.pred_min_speed if predator else self.para.prey_min_speed
-        energy = self.para.pred_energy if predator else self.para.prey_energy
+        spe = get_arg(self.para, predator, "min_speed")
+        energy = get_arg(self.para, predator, "energy")
         color = [1,0,0,1] if predator else [0,0,1,1]
         file = "sphere2red.urdf"
         

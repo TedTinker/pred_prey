@@ -48,6 +48,11 @@ def change_para(**kwargs):
         setattr(para, key, value)
     return(para)
 
+def get_arg(para, predator, arg):
+    if(predator): arg = "pred_" + arg
+    else:         arg = "prey_" + arg
+    return(getattr(para, arg))
+
 
 ### A few utilities
 import os
