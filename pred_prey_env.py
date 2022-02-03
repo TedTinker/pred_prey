@@ -154,22 +154,18 @@ class PredPreyEnv():
                 "Predator" if agent.predator else "Prey", agent.p_num, round(r,3), round(r_dist,3), round(r_closer,3), round(r_col, 3)))
         return(r)
     
-    def get_actions(self, pred_brain, prey_brain):
-        action_list = []
-        for agent in self.agent_list:
-            rgbd, spe, energy, _ = self.get_obs(agent)
-            if(agent.predator):
-                agent.action, agent.hidden = pred_brain.act(rgbd, spe, energy, agent.action, agent.hidden, self.para.pred_condition)
-            else:
-                agent.action, agent.hidden = prey_brain.act(rgbd, spe, energy, agent.action, agent.hidden, self.para.prey_condition)
-            action_list.append(agent.action)
-        return(action_list)
+    def get_action(self, agent, brain, obs = None):
+        if(obs == None): obs = self.get_obs(agent)
+        agent.action, agent.hidden = brain.act(
+            obs[0], obs[1], obs[2], obs[3], agent.hidden, 
+            get_arg(self.para, agent.predator, "condition"))
   
-    def step(self, action_list):
+    def step(self, obs_list, pred_brain, prey_brain):
         self.steps += 1
-
+        
         for i, agent in enumerate(self.agent_list):
-            agent.action = action_list[i]
+            brain = pred_brain if agent.predator else prey_brain
+            self.get_action(agent, brain, obs_list[i])
             yaw, spe = self.unnormalize(agent.action, agent.predator)
             if(agent.energy <= 0): spe = 0
             agent.energy -= spe * get_arg(self.para, agent.predator, "energy_per_speed")

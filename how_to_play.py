@@ -1,6 +1,6 @@
 import torch
 
-from utils import get_input, get_arg, plot_rewards, add_discount
+from utils import get_input, plot_rewards, add_discount
 
 
 
@@ -13,16 +13,15 @@ def episode(env, pred_brain, prey_brain, GUI = False):
     done = False
     while(done == False):
         with torch.no_grad():
-            action_list = env.get_actions(pred_brain, prey_brain)
-            new_obs_list, (r_pred, r_prey), done, win = env.step(action_list)
+            new_obs_list, (r_pred, r_prey), done, win = env.step(obs_list, pred_brain, prey_brain)
             
             # o, s, e, a, r, no, ns, d, cutoff
             to_push_pred.append(
-                (obs_list[0][0], obs_list[0][1], obs_list[0][2], action_list[0], r_pred, 
+                (obs_list[0][0], obs_list[0][1], obs_list[0][2], env.agent_list[0].action, r_pred, 
                 new_obs_list[0][0], new_obs_list[0][1], new_obs_list[0][2], torch.tensor(done), torch.tensor(done)))
                 
             to_push_prey.append(
-                (obs_list[1][0], obs_list[1][1], obs_list[1][2], action_list[1], r_prey, 
+                (obs_list[1][0], obs_list[1][1], obs_list[1][2], env.agent_list[1].action, r_prey, 
                 new_obs_list[1][0], new_obs_list[1][1], new_obs_list[1][2], torch.tensor(done), torch.tensor(done)))
                 
             obs_list = new_obs_list
