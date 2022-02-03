@@ -113,7 +113,6 @@ class PredPreyEnv():
         plt.ioff()
 
     def change_velocity(self, agent, yaw_change, speed, verbose = False):
-        
         old_yaw = agent.yaw
         new_yaw = old_yaw + yaw_change
         new_yaw %= 2*pi
@@ -154,6 +153,17 @@ class PredPreyEnv():
             print("\n{} {} reward {}:\n\t{} from dist,\n\t{} from dist closer,\n\t{} from collision.".format(
                 "Predator" if agent.predator else "Prey", agent.p_num, round(r,3), round(r_dist,3), round(r_closer,3), round(r_col, 3)))
         return(r)
+    
+    def get_actions(self, pred_brain, prey_brain):
+        action_list = []
+        for agent in self.agent_list:
+            rgbd, spe, energy, _ = self.get_obs(agent)
+            if(agent.predator):
+                agent.action, agent.hidden = pred_brain.act(rgbd, spe, energy, agent.action, agent.hidden, self.para.pred_condition)
+            else:
+                agent.action, agent.hidden = prey_brain.act(rgbd, spe, energy, agent.action, agent.hidden, self.para.prey_condition)
+            action_list.append(agent.action)
+        return(action_list)
   
     def step(self, action_list):
         self.steps += 1

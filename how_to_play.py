@@ -6,23 +6,14 @@ from utils import get_input, get_arg, plot_rewards, add_discount
 
 
 
-def episode(env, pred, prey, GUI = False):
+def episode(env, pred_brain, prey_brain, GUI = False):
     
     obs_list = env.reset()  
     to_push_pred, to_push_prey = [], []
     done = False
     while(done == False):
         with torch.no_grad():
-            action_list = []
-            for i, agent in enumerate(env.agent_list):
-                if(get_arg(env.para, agent.predator, "condition") == "by_hand"):  
-                    action = move_by_hand(env, agent.predator)
-                else:
-                    if(agent.predator):
-                        action, agent.hidden = pred.act(obs_list[i][0], obs_list[i][1], obs_list[i][2], obs_list[i][3], agent.hidden, env.para.pred_condition)
-                    else:
-                        action, agent.hidden = prey.act(obs_list[i][0], obs_list[i][1], obs_list[i][2], obs_list[i][3], agent.hidden, env.para.prey_condition)
-                action_list.append(action)
+            action_list = env.get_actions(pred_brain, prey_brain)
             new_obs_list, (r_pred, r_prey), done, win = env.step(action_list)
             
             # o, s, e, a, r, no, ns, d, cutoff
