@@ -4,39 +4,40 @@ from utils import get_input, plot_rewards, add_discount
 
 
 
+def update_rewards(agent, r, pred_win):
+    r = r if agent.predator else -r
+    reward_list = add_discount([p[4] for p in agent.to_push], r)
+    agent.to_push = [(p[0], p[1], p[2], p[3], torch.tensor(r), p[5], p[6], p[7], p[8], p[9]) for p, r in zip(agent.to_push, reward_list)]
+
+
 
 
 def episode(env, pred_brain, prey_brain, GUI = False):
     
     obs_list = env.reset()  
-    to_push_pred, to_push_prey = [], []
     done = False
     while(done == False):
         with torch.no_grad():
-            new_obs_list, (r_pred, r_prey), done, win = env.step(obs_list, pred_brain, prey_brain)
+            new_obs_list, (r_pred, r_prey), done, pred_win = env.step(obs_list, pred_brain, prey_brain)
             
             # o, s, e, a, r, no, ns, d, cutoff
-            to_push_pred.append(
-                (obs_list[0][0], obs_list[0][1], obs_list[0][2], env.agent_list[0].action, r_pred, 
-                new_obs_list[0][0], new_obs_list[0][1], new_obs_list[0][2], torch.tensor(done), torch.tensor(done)))
-                
-            to_push_prey.append(
-                (obs_list[1][0], obs_list[1][1], obs_list[1][2], env.agent_list[1].action, r_prey, 
-                new_obs_list[1][0], new_obs_list[1][1], new_obs_list[1][2], torch.tensor(done), torch.tensor(done)))
-                
+            for i, agent in enumerate(env.agent_list):
+                reward = r_pred if agent.predator else r_prey
+                agent.to_push.append(
+                    (obs_list[i][0], obs_list[i][1], obs_list[i][2], env.agent_list[i].action, reward, 
+                    new_obs_list[i][0], new_obs_list[i][1], new_obs_list[i][2], torch.tensor(done), torch.tensor(done)))
+                                
             obs_list = new_obs_list
-              
-    env.close()
-    
     r=1
-    reward_list_pred = add_discount([p[4] for p in to_push_pred], r if win else -r)
-    reward_list_prey = add_discount([p[4] for p in to_push_prey], -r if win else r)
+    for agent in env.agent_list: update_rewards(agent, r, pred_win)
     
-    to_push_pred = [(p[0], p[1], p[2], p[3], torch.tensor(r), p[5], p[6], p[7], p[8], p[9]) for p, r in zip(to_push_pred, reward_list_pred)]
-    to_push_prey = [(p[0], p[1], p[2], p[3], torch.tensor(r), p[5], p[6], p[7], p[8], p[9]) for p, r in zip(to_push_prey, reward_list_prey)]
+    to_push_pred = env.agent_list[0].to_push
+    to_push_prey = env.agent_list[1].to_push
     
-    rewards = [(preds, preys) for preds, preys in zip(reward_list_pred, reward_list_prey)]
-    return(to_push_pred, to_push_prey, win, rewards)
+    env.close()
+
+    rewards = [(preds[4], preys[4]) for preds, preys in zip(to_push_pred, to_push_prey)]
+    return(to_push_pred, to_push_prey, pred_win, rewards)
 
 
 
