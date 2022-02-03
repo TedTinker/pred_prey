@@ -24,8 +24,10 @@ class PredPreyEnv():
         self.steps, self.resets = 0, 0
 
     def close(self, forever = False):
+        self.arena.used_spots = []
         for agent in self.agent_list:
             p.removeBody(agent.p_num, physicsClientId = self.arena.physicsClient)
+        self.agent_list = []
         if(self.resets % 100 == 99 and self.GUI and not forever):
             p.disconnect(self.arena.physicsClient)
             self.arena.already_constructed = False
@@ -33,10 +35,14 @@ class PredPreyEnv():
         if(forever):
             p.disconnect(self.arena.physicsClient)  
 
-    def reset(self, min_dif = 0, max_dif = 100):
+    def reset(self):
         self.close()
         self.resets += 1; self.steps = 0
-        self.agent_list = self.arena.start_arena(min_dif, max_dif)
+        self.arena.start_arena()
+        for _ in range(self.para.pred_start):
+            self.agent_list.append(self.arena.make_agent(True))
+        for _ in range(self.para.prey_start):
+            self.agent_list.append(self.arena.make_agent(False))
         return([self.get_obs(agent) for agent in self.agent_list])
 
     def get_obs(self, agent):

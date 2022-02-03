@@ -6,10 +6,10 @@ from utils import get_input, plot_rewards, add_discount
 
 
 
-def episode(env, pred, prey, min_dif = 0, max_dif = 100, GUI = False):
+def episode(env, pred, prey, GUI = False):
     
     (pred_rgbd, pred_speed, pred_energy, pred_action), \
-    (prey_rgbd, prey_speed, prey_energy, prey_action) = env.reset(min_dif, max_dif)  
+    (prey_rgbd, prey_speed, prey_energy, prey_action) = env.reset()  
     pred_hc, prey_hc  = None, None
     to_push_pred, to_push_prey = [], []
     done = False

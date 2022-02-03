@@ -240,19 +240,14 @@ def plot_losses(pred_losses, prey_losses, too_long = None, name = None, folder =
   
   
 # How to plot predator victory-rates.
-def plot_wins(win_easy, win_med, win_hard, max_len = None, name = None, folder = "default"):
-    total_length = len(win_easy)
-    x = [i for i in range(1, len(win_easy)+1)]
+def plot_wins(wins, max_len = None, name = None, folder = "default"):
+    total_length = len(wins)
+    x = [i for i in range(1, len(wins)+1)]
     if(max_len != None and total_length > max_len):
         x = x[-max_len:]
-        win_easy = win_easy[-max_len:]
-        win_med = win_med[-max_len:]
-        win_hard = win_hard[-max_len:]
-    plt.plot(x, win_easy, color = "turquoise", label = "Easy for predator")
-    plt.plot(x, win_med, color = "gray", label = "Medium")
-    plt.plot(x, win_hard, color = "lightcoral", label = "Hard")
+        wins = wins[-max_len:]
+    plt.plot(x, wins, color = "gray")
     plt.ylim([0, 1])
-    plt.legend(loc = 'upper left')
     plt.title("Predator win-rates")
     plt.xlabel("Epochs")
     plt.ylabel("Predator win-rate")

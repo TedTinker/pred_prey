@@ -51,30 +51,10 @@ class Arena():
         self.physicsClient = get_physics(GUI, self.w, self.h)
         self.open_spots = [(x,y) for x, y in product(range(self.w), range(self.h)) \
                           if self.arena_map[x,y].tolist() == [255, 255, 255]]
-        num_open_spots = range(len(self.open_spots))
-        self.pairs = [(self.open_spots[i], self.open_spots[j]) for \
-                      i, j in product(num_open_spots, num_open_spots) if i != j]
-        distances = [pythagorean(self.pairs[i][0], self.pairs[i][1]) for \
-                      i in range(len(self.pairs))]
-        self.difficulties = [percentileofscore(distances, d) for d in distances]
+        self.used_spots = []
         self.already_constructed = False
-  
-    def get_pair_with_difficulty(self, min_dif = 0, max_dif = 100, verbose = False):
-        if(max_dif == None):   max_dif = min_dif
-        if(min_dif > max_dif): min_dif = max_dif
-        pair_list = []
-        while(len(pair_list) == 0):
-            pair_list = [self.pairs[i] for i in range(len(self.pairs)) if \
-                        self.difficulties[i] >= min_dif and self.difficulties[i] <= max_dif]
-            min_dif -= 1; max_dif += 1
-        if(verbose):
-            print("Predator/Prey positions with minimum difficulty {}, maximum difficulty {}.".format(
-                min_dif, max_dif))
-            for pair in pair_list:
-                print(pair)
-        return(random.choice(pair_list))
 
-    def start_arena(self, min_dif = None, max_dif = None):
+    def start_arena(self):
         if(not self.already_constructed):
             self.wall_ids = []
             for loc in ((x,y) for x in range(self.w) for y in range(self.h)):
@@ -87,13 +67,12 @@ class Arena():
                   p.changeVisualShape(cube, -1, rgbaColor=color, physicsClientId = self.physicsClient)
                   self.wall_ids.append(cube)
                   self.already_constructed = True
-                    
-        pred_pos, prey_pos = self.get_pair_with_difficulty(min_dif, max_dif)
-        pred = self.make_agent(True, pred_pos)
-        prey = self.make_agent(False, prey_pos)
-        return([pred, prey])
     
-    def make_agent(self, predator, pos):
+    def make_agent(self, predator):
+        pos = random.choice(self.open_spots)
+        while(pos in self.used_spots):
+            pos = random.choice(self.open_spots)
+        self.used_spots.append(pos)
         yaw = random.uniform(0, 2*pi)
         spe = get_arg(self.para, predator, "min_speed")
         energy = get_arg(self.para, predator, "energy")
@@ -157,6 +136,3 @@ class Arena():
 
 if __name__ == "__main__":
     arena = Arena()
-    arena.get_pair_with_difficulty(min_dif = 0, max_dif = 0, verbose = True)
-    arena.get_pair_with_difficulty(min_dif = 50, max_dif = 50, verbose = True)
-    arena.get_pair_with_difficulty(min_dif = 100, max_dif = 100, verbose = True)
