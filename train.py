@@ -24,8 +24,8 @@ class Trainer():
     def __init__(
             self, para = para, training_agent = "both", play_by_hand = False,
             save_folder = "default", load_folder = None, load_name = "last",
-            restart_if = {"pred" : {500 : .4}},
-            done_if =    {"pred" : {500 : .99}}):
+            restart_if = {"pred" : {300 : .4}},
+            done_if =    {"pred" : {200 : .99}}):
         
         self.para = para
         self.training_agent = training_agent
