@@ -13,7 +13,6 @@ trainer.close()
 
 trainer = Trainer(change_para(arena_name = "big_arena", energy = 4000, pred_condition = 1, prey_condition = "random"),
                   play_by_hand = False, training_agent = "both",
-                  difficulty_dic = {"easy" : (0,  20), "med"  : (0,  100), "hard" : (80,100)},
                   save_folder = "big_with_prey_random", 
                   load_folder = "empty_with_prey_pinned")
 trainer.train()
@@ -22,9 +21,8 @@ trainer.close()
 
 trainer = Trainer(change_para(arena_name = "big_arena", energy = 4000, pred_condition = 1, prey_condition = 1),
                   play_by_hand = False, training_agent = "prey",
-                  restart_if = {"prey" : {500 : {"easy" : .9}}},
-                  done_if =    {"prey" : {100 : {"easy" : .05, "med" : .01, "hard" : .01}}},
-                  difficulty_dic = {"easy" : (0,  20), "med"  : (0,  100), "hard" : (80,100)},
+                  restart_if = {"prey" : {500 : .9}},
+                  done_if =    {"prey" : {100 : .05}},
                   save_folder = "big", 
                   load_folder = "big_with_prey_random")
 trainer.train()
@@ -34,7 +32,6 @@ trainer.close()
 
 trainer = Trainer(change_para("final_arena", energy = 4000, pred_condition = 1, prey_condition = 1),
                   play_by_hand = False, training_agent = "both",
-                  difficulty_dic = {"easy" : (0,  20), "med"  : (0,  100), "hard" : (80,100)},
                   save_folder = "final", 
                   load_folder = "big",
                   restart_if = {},
