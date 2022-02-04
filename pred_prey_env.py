@@ -3,7 +3,7 @@ import numpy as np
 import pybullet as p
 from math import degrees, pi, cos, sin
 
-from utils import get_arg, parameters as para
+from utils import get_arg, parameters as para, add_discount
 from arena import get_physics, Arena
 
     
@@ -138,6 +138,12 @@ class PredPreyEnv():
         yaw = action[0].clip(-1,1).item() * max_angle_change
         spe = min_speed + ((action[1].clip(-1,1).item() + 1)/2) * (max_speed - min_speed)
         return(yaw, spe)
+    
+    def get_action(self, agent, brain, obs = None):
+        if(obs == None): obs = self.get_obs(agent)
+        agent.action, agent.hidden = brain.act(
+            obs[0], obs[1], obs[2], obs[3], agent.hidden, 
+            get_arg(self.para, agent.predator, "condition"))
 
     def get_reward(self, agent, dist, closer, collision, pred_hits_prey, verbose = False):
         dist_d = get_arg(self.para, agent.predator, "reward_dist")
@@ -154,11 +160,10 @@ class PredPreyEnv():
                 "Predator" if agent.predator else "Prey", agent.p_num, round(r,3), round(r_dist,3), round(r_closer,3), round(r_col, 3)))
         return(r)
     
-    def get_action(self, agent, brain, obs = None):
-        if(obs == None): obs = self.get_obs(agent)
-        agent.action, agent.hidden = brain.act(
-            obs[0], obs[1], obs[2], obs[3], agent.hidden, 
-            get_arg(self.para, agent.predator, "condition"))
+    def update_rewards(self, agent, r, pred_win):
+        r = r if agent.predator else -r
+        reward_list = add_discount([p[4] for p in agent.to_push], r)
+        agent.to_push = [(p[0], p[1], p[2], p[3], torch.tensor(r), p[5], p[6], p[7], p[8], p[9]) for p, r in zip(agent.to_push, reward_list)]
   
     def step(self, obs_list, pred_brain, prey_brain):
         self.steps += 1
@@ -184,9 +189,18 @@ class PredPreyEnv():
         rewards = (
             self.get_reward(self.agent_list[0], dist_after, dist_closer, pred_collision, pred_hits_prey), 
             self.get_reward(self.agent_list[1], dist_after, dist_closer, prey_collision, pred_hits_prey))
-        observations = [self.get_obs(agent) for agent in self.agent_list]
+        new_obs_list = [self.get_obs(agent) for agent in self.agent_list]
         done = True if pred_hits_prey or self.agent_list[0].energy <= 0 else False
-        return(observations, rewards, done, pred_hits_prey)
+        
+        # o, s, e, a, r, no, ns, d, cutoff
+        for i, agent in enumerate(self.agent_list):
+            agent.to_push.append(
+                (obs_list[i][0], obs_list[i][1], obs_list[i][2], new_obs_list[i][3], rewards[i], 
+                new_obs_list[i][0], new_obs_list[i][1], new_obs_list[i][2], torch.tensor(done), torch.tensor(done)))
+            if(done):
+                r=1
+                self.update_rewards(agent, r, pred_hits_prey)
+        return(new_obs_list, rewards, done, pred_hits_prey)
       
 
     
