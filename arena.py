@@ -91,7 +91,10 @@ class Arena():
         return(agent)
     
     def make_flower(self):
-        pos   = random.choice(self.open_spots)
+        pos = random.choice(self.open_spots)
+        while(pos in self.used_spots):
+            pos = random.choice(self.open_spots)
+        self.used_spots.append(pos)
         roll  = random.uniform(0, 2*pi)
         pitch = random.uniform(0, 2*pi)
         yaw   = random.uniform(0, 2*pi)

@@ -20,6 +20,7 @@ class PredPreyEnv():
         self.para = para
         self.GUI = GUI
         self.arena = Arena(para, self.GUI)
+        self.flower_list = []
         self.agent_list = []
         self.steps, self.resets = 0, 0
 
@@ -27,6 +28,8 @@ class PredPreyEnv():
         self.arena.used_spots = []
         for agent in self.agent_list:
             p.removeBody(agent.p_num, physicsClientId = self.arena.physicsClient)
+        for flower in self.flower_list:
+            p.removeBody(flower, physicsClientId = self.arena.physicsClient)
         self.agent_list = []
         if(self.resets % 100 == 99 and self.GUI and not forever):
             p.disconnect(self.arena.physicsClient)
@@ -43,6 +46,8 @@ class PredPreyEnv():
             self.agent_list.append(self.arena.make_agent(True))
         for _ in range(self.para.prey_start):
             self.agent_list.append(self.arena.make_agent(False))
+        for _ in range(self.para.flowers):
+            self.flower_list.append(self.arena.make_flower())
         return([self.get_obs(agent) for agent in self.agent_list])
 
     def get_obs(self, agent):
