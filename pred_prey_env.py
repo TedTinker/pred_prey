@@ -2,6 +2,7 @@ import torch
 import numpy as np
 import pybullet as p
 from math import degrees, pi, cos, sin
+from itertools import product
 
 from utils import get_arg, parameters as para, add_discount
 from arena import get_physics, Arena
@@ -95,7 +96,8 @@ class PredPreyEnv():
         ys = [agent.pos[1] for agent in self.agent_list]
         x = sum(xs)/len(xs)
         y = sum(ys)/len(ys)
-        dist = 3 # [].max()
+        dist = max([self.arena.agent_dist(agent_1.p_num, agent_2.p_num) for agent_1, agent_2 in \
+                product(self.agent_list, self.agent_list)])
         
         view_matrix = p.computeViewMatrix(
             cameraEyePosition = [x, y, dist + 1], 
