@@ -29,9 +29,10 @@ class PredPreyEnv():
         self.arena.used_spots = []
         for agent in self.agent_list:
             p.removeBody(agent.p_num, physicsClientId = self.arena.physicsClient)
+        self.agent_list = []
         for flower in self.flower_list:
             p.removeBody(flower, physicsClientId = self.arena.physicsClient)
-        self.agent_list = []
+        self.flower_list = []
         if(self.resets % 100 == 99 and self.GUI and not forever):
             p.disconnect(self.arena.physicsClient)
             self.arena.already_constructed = False
@@ -120,6 +121,12 @@ class PredPreyEnv():
         plt.close()
         plt.ioff()
         
+    def maintain_flowers(self):
+        for flower in self.flower_list:
+            pos, orn = p.getBasePositionAndOrientation(flower, physicsClientId = self.arena.physicsClient)
+            p.resetBasePositionAndOrientation(flower,(pos[0], pos[1], .5), orn, physicsClientId = self.arena.physicsClient)
+
+        
     def update_pos_yaw_spe(self):
         for agent in self.agent_list:
             agent.pos, agent.yaw, agent.spe = self.arena.get_pos_yaw_spe(agent.p_num)
@@ -157,20 +164,21 @@ class PredPreyEnv():
             obs[0], obs[1], obs[2], obs[3], agent.hidden, 
             get_arg(self.para, agent.predator, "condition"))
 
-    def get_reward(self, agent, dist, closer, collision, pred_hits_prey, verbose = False):
+    def get_reward(self, agent, dist, closer, flower_dist, flower_closer, collision, pred_hits_prey):
         dist_d = get_arg(self.para, agent.predator, "reward_dist")
         closer_d = get_arg(self.para, agent.predator, "reward_dist_closer")
+        f_dist_d = get_arg(self.para, agent.predator, "reward_flower_dist")
+        f_closer_d = get_arg(self.para, agent.predator, "reward_flower_dist_closer")
         col_d = get_arg(self.para, agent.predator, "reward_collision")
         
         r_dist = (1/dist - .7) * dist_d
         if(pred_hits_prey): 
             r_dist = 2.5 if agent.predator else -2.5
         r_closer = closer * closer_d
+        r_f_dist = (1/flower_dist - .7) * f_dist_d
+        r_f_closer = flower_closer * f_closer_d
         r_col    = -col_d if collision else 0
-        r = r_dist + r_closer + r_col
-        if(verbose):
-            print("\n{} {} reward {}:\n\t{} from dist,\n\t{} from dist closer,\n\t{} from collision.".format(
-                "Predator" if agent.predator else "Prey", agent.p_num, round(r,3), round(r_dist,3), round(r_closer,3), round(r_col, 3)))
+        r = r_dist + r_closer + r_f_dist + r_f_closer + r_col
         return(r)
     
     def update_rewards(self, agent, r, pred_win):
@@ -189,29 +197,35 @@ class PredPreyEnv():
             agent.energy -= spe * get_arg(self.para, agent.predator, "energy_per_speed")
             self.change_velocity(agent, yaw, spe)
       
-        dists_before = self.arena.all_agent_dists(self.agent_list)
+        agent_dists_before = self.arena.all_agent_dists(self.agent_list)
+        flower_dists_before = self.arena.all_flower_dists(self.agent_list, self.flower_list)
+        self.maintain_flowers()
         p.stepSimulation(physicsClientId = self.arena.physicsClient)
         self.update_pos_yaw_spe()
-        dists_after = self.arena.all_agent_dists(self.agent_list)
-        dists_closer = [before - after for before, after in zip(dists_before, dists_after)]
-      
+        agent_dists_after = self.arena.all_agent_dists(self.agent_list)
+        agent_dists_closer = [before - after for before, after in zip(agent_dists_before, agent_dists_after)]
+        flower_dists_after = self.arena.all_flower_dists(self.agent_list, self.flower_list)
+        flower_dists_closer = [before - after for before, after in zip(flower_dists_before, flower_dists_after)]
+        
         wall_collisions = self.arena.all_wall_collisions(self.agent_list)
         pred_hits_prey = self.arena.agent_collisions(self.agent_list[0].p_num, self.agent_list[1].p_num)
         
-        rewards = [self.get_reward(self.agent_list[i], dists_after[i], dists_closer[i], wall_collisions[i], pred_hits_prey)
+        rewards = [self.get_reward(self.agent_list[i], 
+                                   agent_dists_after[i], agent_dists_closer[i], 
+                                   flower_dists_after[i], flower_dists_closer[i],
+                                   wall_collisions[i], pred_hits_prey)
                    for i in range(len(self.agent_list))]
         new_obs_list = [self.get_obs(agent) for agent in self.agent_list]
         done = True if pred_hits_prey or self.agent_list[0].energy <= 0 else False
         
-        # o, s, e, a, r, no, ns, d, cutoff
-        for i, agent in enumerate(self.agent_list):
-            agent.to_push.append(
-                (obs_list[i][0], obs_list[i][1], obs_list[i][2], new_obs_list[i][3], rewards[i], 
-                new_obs_list[i][0], new_obs_list[i][1], new_obs_list[i][2], torch.tensor(done), torch.tensor(done)))
-            if(done):
-                r=1
-                self.update_rewards(agent, r, pred_hits_prey)
-                if(push):
+        if(push):
+            for i, agent in enumerate(self.agent_list):
+                agent.to_push.append(
+                    (obs_list[i][0], obs_list[i][1], obs_list[i][2], new_obs_list[i][3], rewards[i], 
+                    new_obs_list[i][0], new_obs_list[i][1], new_obs_list[i][2], torch.tensor(done), torch.tensor(done)))
+                if(done):
+                    r=1
+                    self.update_rewards(agent, r, pred_hits_prey)
                     brain = pred_brain if agent.predator else prey_brain
                     for i in range(len(agent.to_push)):
                         brain.episodes.push(agent.to_push[i])

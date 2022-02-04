@@ -141,6 +141,15 @@ class Arena():
                 dists.append(self.agent_dist(agent_1.p_num, agent_2.p_num))
             min_dists.append(min(dists))
         return(min_dists)
+    
+    def all_flower_dists(self, agent_list, flower_list):
+        min_dists = []
+        for i, agent in enumerate(agent_list):
+            dists = []
+            for flower in flower_list:
+                dists.append(self.agent_dist(agent.p_num, flower))
+            min_dists.append(min(dists))
+        return(min_dists)
         
     
     def get_pos_yaw_spe(self, p_num):
