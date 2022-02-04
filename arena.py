@@ -34,7 +34,6 @@ import numpy as np
 from math import pi, sin, cos
 import cv2
 from itertools import product
-from scipy.stats import percentileofscore
 import random
 
 from utils import parameters as para

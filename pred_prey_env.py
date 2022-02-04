@@ -95,14 +95,15 @@ class PredPreyEnv():
         ys = [agent.pos[1] for agent in self.agent_list]
         x = sum(xs)/len(xs)
         y = sum(ys)/len(ys)
+        dist = 3 # [].max()
         
         view_matrix = p.computeViewMatrix(
-            cameraEyePosition = [x, y, self.agent_dist() + 1], 
+            cameraEyePosition = [x, y, dist + 1], 
             cameraTargetPosition = [x, y, 0], 
             cameraUpVector = [1, 0, 0], physicsClientId = self.arena.physicsClient)
         proj_matrix = p.computeProjectionMatrixFOV(
             fov = 90, aspect = 1, nearVal = 0.001, 
-            farVal = self.agent_dist() + 2, physicsClientId = self.arena.physicsClient)
+            farVal = dist + 2, physicsClientId = self.arena.physicsClient)
         _, _, rgba, _, _ = p.getCameraImage(
             width=64, height=64,
             projectionMatrix=proj_matrix, viewMatrix=view_matrix, 
