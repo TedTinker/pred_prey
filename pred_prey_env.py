@@ -119,6 +119,10 @@ class PredPreyEnv():
         plt.show()
         plt.close()
         plt.ioff()
+        
+    def update_pos_yaw_spe(self):
+        for agent in self.agent_list:
+            agent.pos, agent.yaw, agent.spe = self.arena.get_pos_yaw_spe(agent.p_num)
 
     def change_velocity(self, agent, yaw_change, speed, verbose = False):
         old_yaw = agent.yaw
@@ -185,19 +189,17 @@ class PredPreyEnv():
             agent.energy -= spe * get_arg(self.para, agent.predator, "energy_per_speed")
             self.change_velocity(agent, yaw, spe)
       
-        dist_before = self.arena.agent_dist(self.agent_list[0].p_num, self.agent_list[1].p_num)
+        dists_before = self.arena.all_agent_dists(self.agent_list)
         p.stepSimulation(physicsClientId = self.arena.physicsClient)
-        for agent in self.agent_list:
-            agent.pos, agent.yaw, agent.spe = self.arena.get_pos_yaw_spe(agent.p_num)
-        dist_after = self.arena.agent_dist(self.agent_list[0].p_num, self.agent_list[1].p_num)
-        dist_closer = dist_before - dist_after
+        self.update_pos_yaw_spe()
+        dists_after = self.arena.all_agent_dists(self.agent_list)
+        dists_closer = [before - after for before, after in zip(dists_before, dists_after)]
       
-        pred_collision = self.arena.wall_collisions(self.agent_list[0].p_num)
-        prey_collision = self.arena.wall_collisions(self.agent_list[1].p_num)
+        wall_collisions = self.arena.all_wall_collisions(self.agent_list)
         pred_hits_prey = self.arena.agent_collisions(self.agent_list[0].p_num, self.agent_list[1].p_num)
-        rewards = (
-            self.get_reward(self.agent_list[0], dist_after, dist_closer, pred_collision, pred_hits_prey), 
-            self.get_reward(self.agent_list[1], dist_after, dist_closer, prey_collision, pred_hits_prey))
+        
+        rewards = [self.get_reward(self.agent_list[i], dists_after[i], dists_closer[i], wall_collisions[i], pred_hits_prey)
+                   for i in range(len(self.agent_list))]
         new_obs_list = [self.get_obs(agent) for agent in self.agent_list]
         done = True if pred_hits_prey or self.agent_list[0].energy <= 0 else False
         

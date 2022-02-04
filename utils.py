@@ -249,7 +249,7 @@ def plot_wins(wins, max_len = None, name = None, folder = "default"):
     plt.plot(x, wins, color = "gray")
     plt.ylim([0, 1])
     plt.title("Predator win-rates")
-    plt.xlabel("Epochs")
+    plt.xlabel("Episodes")
     plt.ylabel("Predator win-rate")
     if(name!=None): save_plot(name, folder)
     plt.show()

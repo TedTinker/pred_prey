@@ -115,6 +115,12 @@ class Arena():
             if 0 < len(p.getContactPoints(p_num, wall, physicsClientId = self.physicsClient)):
               col = True
         return(col)
+    
+    def all_wall_collisions(self, agent_list):
+        collisions = []
+        for agent in agent_list:
+            collisions.append(self.wall_collisions(agent.p_num))
+        return(collisions)
 
     def agent_collisions(self, p_num_1, p_num_2):
         return(0 < len(p.getContactPoints(
@@ -126,6 +132,16 @@ class Arena():
         x = pos_1[0] - pos_2[0]
         y = pos_1[1] - pos_2[1]
         return((x**2 + y**2)**.5)
+    
+    def all_agent_dists(self, agent_list):
+        min_dists = []
+        for i, agent_1 in enumerate(agent_list):
+            dists = []
+            for agent_2 in [agent for j,agent in enumerate(agent_list) if j!=i]:
+                dists.append(self.agent_dist(agent_1.p_num, agent_2.p_num))
+            min_dists.append(min(dists))
+        return(min_dists)
+        
     
     def get_pos_yaw_spe(self, p_num):
         pos, ors = p.getBasePositionAndOrientation(p_num, physicsClientId = self.physicsClient)
