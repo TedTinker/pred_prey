@@ -8,23 +8,18 @@ from utils import get_input, plot_rewards, add_discount
 
 
 
-def episode(env, pred_brain, prey_brain, GUI = False):
+def episode(env, pred_brain, prey_brain, push = True):
     
     obs_list = env.reset()  
     done = False
     while(done == False):
         with torch.no_grad():
-            new_obs_list, (r_pred, r_prey), done, pred_win = env.step(obs_list, pred_brain, prey_brain)
-            obs_list = new_obs_list
+            obs_list, (r_pred, r_prey), done, pred_win = env.step(obs_list, pred_brain, prey_brain, push)
 
-    
-    to_push_pred = env.agent_list[0].to_push
-    to_push_prey = env.agent_list[1].to_push
-    
+    rewards = [(preds[4], preys[4]) for preds, preys in zip(env.agent_list[0].to_push, env.agent_list[1].to_push)]
     env.close()
 
-    rewards = [(preds[4], preys[4]) for preds, preys in zip(to_push_pred, to_push_prey)]
-    return(to_push_pred, to_push_prey, pred_win, rewards)
+    return(pred_win, rewards)
 
 
 

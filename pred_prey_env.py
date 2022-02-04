@@ -159,7 +159,8 @@ class PredPreyEnv():
         col_d = get_arg(self.para, agent.predator, "reward_collision")
         
         r_dist = (1/dist - .7) * dist_d
-        if(pred_hits_prey): r_dist = 2.5 if agent.predator else -2.5
+        if(pred_hits_prey): 
+            r_dist = 2.5 if agent.predator else -2.5
         r_closer = closer * closer_d
         r_col    = -col_d if collision else 0
         r = r_dist + r_closer + r_col
@@ -169,11 +170,11 @@ class PredPreyEnv():
         return(r)
     
     def update_rewards(self, agent, r, pred_win):
-        r = r if agent.predator else -r
+        r = r if (pred_win and agent.predator) or (not pred_win and not agent.predator) else -r
         reward_list = add_discount([p[4] for p in agent.to_push], r)
         agent.to_push = [(p[0], p[1], p[2], p[3], torch.tensor(r), p[5], p[6], p[7], p[8], p[9]) for p, r in zip(agent.to_push, reward_list)]
   
-    def step(self, obs_list, pred_brain, prey_brain):
+    def step(self, obs_list, pred_brain, prey_brain, push):
         self.steps += 1
         
         for i, agent in enumerate(self.agent_list):
@@ -208,6 +209,10 @@ class PredPreyEnv():
             if(done):
                 r=1
                 self.update_rewards(agent, r, pred_hits_prey)
+                if(push):
+                    brain = pred_brain if agent.predator else prey_brain
+                    for i in range(len(agent.to_push)):
+                        brain.episodes.push(agent.to_push[i])
         return(new_obs_list, rewards, done, pred_hits_prey)
       
 

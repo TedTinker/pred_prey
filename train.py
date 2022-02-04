@@ -77,14 +77,9 @@ class Trainer():
         if(GUI): env = self.env_gui
         else:    env = self.env
         
-        to_push_pred, to_push_prey, pred_win, rewards = \
-            episode(env, self.pred, self.prey, GUI = GUI)
+        pred_win, rewards = \
+            episode(env, self.pred, self.prey, push)
         if(keyboard.is_pressed('q') ): plot_rewards(rewards)
-        
-        if(push):
-            for i in range(len(to_push_pred)):
-                self.pred.episodes.push(to_push_pred[i])
-                self.prey.episodes.push(to_push_prey[i])
             
         return(int(pred_win), rewards)
 
