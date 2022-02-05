@@ -380,7 +380,8 @@ class RecurrentTD3(RecurrentOffPolicyRLAlgorithm):
         action_noise=0.1,  # standard deviation of action noise
         target_noise=0.2,  # standard deviation of target smoothing noise
         noise_clip=0.5,  # max abs value of target smoothing noise
-        policy_delay=2):
+        policy_delay=2,
+        max_age = 500):
         
         # hyper-parameters
       
@@ -434,7 +435,7 @@ class RecurrentTD3(RecurrentOffPolicyRLAlgorithm):
         
         # Buffer
         
-        self.episodes = RecurrentReplayBuffer()
+        self.episodes = RecurrentReplayBuffer(max_episode_len = max_age+1)
       
 
     def reinitialize_hidden(self) -> None:

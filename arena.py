@@ -134,6 +134,7 @@ class Arena():
         return((x**2 + y**2)**.5)
     
     def all_agent_dists(self, agent_list):
+        if(len(agent_list) == 1): return([100])
         min_dists = []
         for i, agent_1 in enumerate(agent_list):
             dists = []

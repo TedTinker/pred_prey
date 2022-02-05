@@ -194,6 +194,7 @@ class PredPreyEnv():
         self.steps += 1
         
         for i, agent in enumerate(self.agent_list):
+            agent.age += 1
             brain = pred_brain if agent.predator else prey_brain
             self.get_action(agent, brain, obs_list[i])
             yaw, spe = self.unnormalize(agent.action, agent.predator)
@@ -244,7 +245,7 @@ class PredPreyEnv():
                    for i in range(len(self.agent_list))]
         new_obs_list = [self.get_obs(agent) for agent in self.agent_list]
         
-        dones = [True if agent.energy <= 0 else False for agent in self.agent_list]
+        dones = [True if agent.energy <= 0 or agent.age >= get_arg(self.para, agent.predator, "max_age") else False for agent in self.agent_list]
                 
         for i, agent in enumerate(self.agent_list):
             agent.to_push.append(
@@ -266,7 +267,8 @@ class PredPreyEnv():
                        0 == len(self.agent_list) else False
         pred_win = False
         if(done):
-            pred_win = True if 0 < len([agent for agent in self.agent_list if agent.predator]) else False
+            pred_win = True if len([agent for agent in self.agent_list if agent.predator]) > \
+                               len([agent for agent in self.agent_list if not agent.predator]) else False
             for i, agent in enumerate(self.agent_list):
                 self.dead_agents.append(agent)
                 if(push):

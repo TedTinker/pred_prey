@@ -55,7 +55,8 @@ class Trainer():
         make_folder(self.save_folder)
         self.attempts += 1
         self.e = 0
-        self.pred = RecurrentTD3(); self.prey = RecurrentTD3()
+        self.pred = RecurrentTD3(max_age = self.para.pred_max_age)
+        self.prey = RecurrentTD3(max_age = self.para.prey_max_age)
         if(self.pred_load_folder != None):
             self.pred, self.prey = load_pred_prey(
                 self.pred, self.prey, post = self.pred_load_name, folder = self.pred_load_folder,
@@ -177,7 +178,7 @@ class Trainer():
     def test(self, size = 100):
         self.pred.eval(); self.prey.eval()
         pred_wins = 0
-        for i in range(size):
+        for i in tqdm(range(size)):
             w = self.one_episode(push = False, GUI = True)
             pred_wins += w
         print("Predator wins {} out of {} games ({}%).".format(pred_wins, size, round(100*(pred_wins/size))))
