@@ -5,7 +5,7 @@ from math import pi
 def get_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('--arena_name',             type=str,   default = "empty_arena")    
-    parser.add_argument('--flowers',                type=int,   default = 1)
+    parser.add_argument('--flowers',                type=int,   default = 0)
     parser.add_argument('--flower_size',            type=float, default = 8)
     
     parser.add_argument('--pred_condition',                     default = 1)
@@ -171,10 +171,13 @@ def save_plot(name, folder = "default"):
   
 # How to plot an episode's rewards.
 def plot_rewards(rewards, name = None, folder = "default"):
-    total_length = len(rewards)
+    total_length = max([len(rewards["pred"][i]) for i in range(len(rewards["pred"]))] + 
+                        [len(rewards["prey"][i]) for i in range(len(rewards["prey"]))])
     x = [i for i in range(1, total_length + 1)]
-    plt.plot(x, [r[0] for r in rewards], color = "lightcoral", label = "Predator") # Predator
-    plt.plot(x, [r[1] for r in rewards], color = "turquoise", label = "Prey")  # Prey
+    for pred_reward in rewards["pred"]:
+        plt.plot(x[:len(pred_reward)], pred_reward, color = "lightcoral", label = "Predator") # Predators
+    for prey_reward in rewards["prey"]:
+        plt.plot(x[:len(prey_reward)], prey_reward, color = "turquoise", label = "Prey")  # Prey
     plt.legend(loc = 'upper left')
     plt.title("Rewards")
     plt.xlabel("Time")

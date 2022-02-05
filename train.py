@@ -81,12 +81,12 @@ class Trainer():
             episode(env, self.pred, self.prey, push)
         if(keyboard.is_pressed('q') ): plot_rewards(rewards)
             
-        return(int(pred_win), rewards)
+        return(int(pred_win))
 
 
     def epoch(self, episodes_per_epoch = 3):
         for _ in range(episodes_per_epoch):
-            win, rewards = self.one_episode()
+            win = self.one_episode()
             self.wins.append(win)
             self.wins_rolled.append(get_rolling_average(self.wins))
       

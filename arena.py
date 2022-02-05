@@ -143,6 +143,7 @@ class Arena():
         return(min_dists)
     
     def all_flower_dists(self, agent_list, flower_list):
+        if(flower_list == []): return([100]*len(agent_list))
         min_dists = []
         for i, agent in enumerate(agent_list):
             dists = []

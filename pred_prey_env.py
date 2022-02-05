@@ -23,6 +23,7 @@ class PredPreyEnv():
         self.arena = Arena(para, self.GUI)
         self.flower_list = []
         self.agent_list = []
+        self.dead_agents = []
         self.steps, self.resets = 0, 0
 
     def close(self, forever = False):
@@ -30,6 +31,7 @@ class PredPreyEnv():
         for agent in self.agent_list:
             p.removeBody(agent.p_num, physicsClientId = self.arena.physicsClient)
         self.agent_list = []
+        self.dead_agents = []
         for flower in self.flower_list:
             p.removeBody(flower, physicsClientId = self.arena.physicsClient)
         self.flower_list = []
@@ -184,7 +186,7 @@ class PredPreyEnv():
     def update_rewards(self, agent, r, pred_win):
         r = r if (pred_win and agent.predator) or (not pred_win and not agent.predator) else -r
         reward_list = add_discount([p[4] for p in agent.to_push], r)
-        agent.to_push = [(p[0], p[1], p[2], p[3], torch.tensor(r), p[5], p[6], p[7], p[8], p[9]) for p, r in zip(agent.to_push, reward_list)]
+        agent.to_push = [(p[0], p[1], p[2], p[3], r, p[5], p[6], p[7], p[8], p[9]) for p, r in zip(agent.to_push, reward_list)]
   
     def step(self, obs_list, pred_brain, prey_brain, push):
         self.steps += 1
@@ -193,7 +195,6 @@ class PredPreyEnv():
             brain = pred_brain if agent.predator else prey_brain
             self.get_action(agent, brain, obs_list[i])
             yaw, spe = self.unnormalize(agent.action, agent.predator)
-            if(agent.energy <= 0): spe = 0
             agent.energy -= spe * get_arg(self.para, agent.predator, "energy_per_speed")
             self.change_velocity(agent, yaw, spe)
       
@@ -209,6 +210,9 @@ class PredPreyEnv():
         
         wall_collisions = self.arena.all_wall_collisions(self.agent_list)
         pred_hits_prey = self.arena.agent_collisions(self.agent_list[0].p_num, self.agent_list[1].p_num)
+        if(pred_hits_prey):
+            self.agent_list[0].energy += self.para.pred_energy_from_prey
+            self.agent_list[1].energy -= self.para.pred_energy_from_prey
         
         rewards = [self.get_reward(self.agent_list[i], 
                                    agent_dists_after[i], agent_dists_closer[i], 
@@ -216,16 +220,34 @@ class PredPreyEnv():
                                    wall_collisions[i], pred_hits_prey)
                    for i in range(len(self.agent_list))]
         new_obs_list = [self.get_obs(agent) for agent in self.agent_list]
-        done = True if pred_hits_prey or self.agent_list[0].energy <= 0 else False
         
-        if(push):
-            for i, agent in enumerate(self.agent_list):
-                agent.to_push.append(
-                    (obs_list[i][0], obs_list[i][1], obs_list[i][2], new_obs_list[i][3], rewards[i], 
-                    new_obs_list[i][0], new_obs_list[i][1], new_obs_list[i][2], torch.tensor(done), torch.tensor(done)))
-                if(done):
+        dones = [True if agent.energy <= 0 else False for agent in self.agent_list]
+                
+        for i, agent in enumerate(self.agent_list):
+            agent.to_push.append(
+                (obs_list[i][0], obs_list[i][1], obs_list[i][2], new_obs_list[i][3], rewards[i], 
+                new_obs_list[i][0], new_obs_list[i][1], new_obs_list[i][2], torch.tensor(dones[i]), torch.tensor(dones[i])))
+            if(dones[i]):
+                p.removeBody(agent.p_num, physicsClientId = self.arena.physicsClient)
+                self.dead_agents.append(agent)
+                if(push):
                     r=1
                     self.update_rewards(agent, r, pred_hits_prey)
+                    brain = pred_brain if agent.predator else prey_brain
+                    for i in range(len(agent.to_push)):
+                        brain.episodes.push(agent.to_push[i])
+        
+        self.agent_list = [agent for i, agent in enumerate(self.agent_list) if not dones[i]]
+        done = True if (self.para.pred_start > 0 and 0 == len([agent for agent in self.agent_list if agent.predator])) or \
+                       (self.para.prey_start > 0 and 0 == len([agent for agent in self.agent_list if not agent.predator])) else False
+        if(done):
+            for agent in self.agent_list:
+                self.dead_agents.append(agent)
+                if(push):
+                    r=1
+                    self.update_rewards(agent, r, pred_hits_prey)
+                    agent.to_push[-1] = (agent.to_push[-1][0], agent.to_push[-1][1], agent.to_push[-1][2], agent.to_push[-1][3], agent.to_push[-1][4], 
+                                         agent.to_push[-1][5], agent.to_push[-1][6], agent.to_push[-1][7], torch.tensor(done), torch.tensor(done))
                     brain = pred_brain if agent.predator else prey_brain
                     for i in range(len(agent.to_push)):
                         brain.episodes.push(agent.to_push[i])
