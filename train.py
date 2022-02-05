@@ -23,7 +23,9 @@ from rtd3 import RecurrentTD3
 class Trainer():
     def __init__(
             self, para = para, training_agent = "both", play_by_hand = False,
-            save_folder = "default", load_folder = None, load_name = "last",
+            save_folder = "default", 
+            pred_load_folder = None, pred_load_name = "last",
+            prey_load_folder = None, prey_load_name = "last",
             restart_if = {"pred" : {300 : .4}},
             done_if =    {"pred" : {200 : .99}}):
         
@@ -33,7 +35,8 @@ class Trainer():
         self.start_pred_condition = self.para.pred_condition
         self.start_prey_condition = self.para.prey_condition
         self.save_folder = save_folder
-        self.load_folder = load_folder; self.load_name = load_name
+        self.pred_load_folder = pred_load_folder; self.pred_load_name = pred_load_name
+        self.prey_load_folder = prey_load_folder; self.prey_load_name = prey_load_name
         
         self.env = PredPreyEnv(para, GUI = False)
         self.env_gui = PredPreyEnv(para, GUI = True)
@@ -53,9 +56,14 @@ class Trainer():
         self.attempts += 1
         self.e = 0
         self.pred = RecurrentTD3(); self.prey = RecurrentTD3()
-        if(self.load_folder != None):
+        if(self.pred_load_folder != None):
             self.pred, self.prey = load_pred_prey(
-                self.pred, self.prey, post = self.load_name, folder = self.load_folder)
+                self.pred, self.prey, post = self.pred_load_name, folder = self.pred_load_folder,
+                load = "pred")
+        if(self.prey_load_folder != None):
+            self.pred, self.prey = load_pred_prey(
+                self.pred, self.prey, post = self.prey_load_name, folder = self.prey_load_folder,
+                load = "prey")
         if(self.pred_episodes != None and self.prey_episodes != None):
             self.pred.episodes = self.pred_episodes
             self.prey.episodes = self.prey_episodes
@@ -170,6 +178,6 @@ class Trainer():
         self.pred.eval(); self.prey.eval()
         pred_wins = 0
         for i in range(size):
-            w, _ = self.one_episode(push = False, GUI = True)
+            w = self.one_episode(push = False, GUI = True)
             pred_wins += w
         print("Predator wins {} out of {} games ({}%).".format(pred_wins, size, round(100*(pred_wins/size))))

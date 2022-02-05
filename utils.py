@@ -5,7 +5,7 @@ from math import pi
 def get_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('--arena_name',             type=str,   default = "empty_arena")    
-    parser.add_argument('--flowers',                type=int,   default = 0)
+    parser.add_argument('--flowers',                type=int,   default = 1)
     parser.add_argument('--flower_size',            type=float, default = 8)
     
     parser.add_argument('--pred_condition',                     default = 1)

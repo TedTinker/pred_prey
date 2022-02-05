@@ -225,7 +225,7 @@ class PredPreyEnv():
                         pred_prey_collisions[j] = True
             if(not agent.predator):
                 for j, flower in enumerate(self.flower_list):
-                    if(self.arena.agent_collisions(self.agent.p_num, flower)):
+                    if(self.arena.agent_collisions(agent.p_num, flower)):
                         agent.energy += self.para.prey_energy_from_flower
                         prey_flower_collisions[i] = True
                         dead_flowers.append(j)
