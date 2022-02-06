@@ -1,5 +1,4 @@
 # Issues:
-    # Prey having trouble learning to catch flowers
     # Ducks can't push flowers
 
 # Parameters for an arena.
@@ -10,7 +9,7 @@ def get_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('--arena_name',             type=str,   default = "empty_arena")    
     parser.add_argument('--flowers',                type=int,   default = 1)
-    parser.add_argument('--flower_size',            type=float, default = .5)
+    parser.add_argument('--flower_size',            type=float, default = .7)
     
     parser.add_argument('--pred_condition',                     default = 1)
     parser.add_argument('--pred_start',             type=int,   default = 1)
@@ -35,7 +34,7 @@ def get_args():
     parser.add_argument('--prey_max_age',           type=int,   default = 500)
     parser.add_argument('--prey_energy',            type=float, default = 3000)
     parser.add_argument('--prey_energy_per_speed',  type=float, default = 1)
-    parser.add_argument('--prey_energy_from_flower',type=float, default = 1000)
+    parser.add_argument('--prey_energy_from_flower',type=float, default = 2000)
     parser.add_argument('--prey_image_size',        type=int,   default = 16)
     parser.add_argument('--prey_min_speed',         type=float, default = 10)
     parser.add_argument('--prey_max_speed',         type=float, default = 50)

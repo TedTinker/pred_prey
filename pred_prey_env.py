@@ -168,6 +168,7 @@ class PredPreyEnv():
 
     def get_reward(self, agent, dist, closer, flower_dist, flower_closer, collision, pred_hits_prey, prey_hits_flower):
         dist_d = get_arg(self.para, agent.predator, "reward_dist")
+        if(not agent.predator and self.para.pred_start == 0): dist_d = 0
         closer_d = get_arg(self.para, agent.predator, "reward_dist_closer")
         f_dist_d = get_arg(self.para, agent.predator, "reward_flower_dist")
         f_closer_d = get_arg(self.para, agent.predator, "reward_flower_dist_closer")
@@ -181,12 +182,14 @@ class PredPreyEnv():
         if(prey_hits_flower): 
             r_f_dist = 2.5 if agent.predator else -2.5
         r_f_closer = flower_closer * f_closer_d
+        if(prey_hits_flower):
+            r_f_closer = 0
         r_col    = -col_d if collision else 0
         r = r_dist + r_closer + r_f_dist + r_f_closer + r_col
         return(r)
     
-    def update_rewards(self, agent, r, pred_win):
-        r = r if (pred_win and agent.predator) or (not pred_win and not agent.predator) else -r
+    def update_rewards(self, agent, r, win):
+        r = r if win else -r
         reward_list = add_discount([p[4] for p in agent.to_push], r)
         agent.to_push = [(p[0], p[1], p[2], p[3], r, p[5], p[6], p[7], p[8], p[9]) for p, r in zip(agent.to_push, reward_list)]
   
@@ -248,7 +251,8 @@ class PredPreyEnv():
                     if(self.arena.agent_collisions(agent.p_num, flower)):
                         agent.energy += self.para.prey_energy_from_flower
                         prey_flower_collisions[i] = True
-                        dead_flower_indexes.append(j)
+                        if(j not in dead_flower_indexes):
+                            dead_flower_indexes.append(j)
             if(agent.energy <= 0):
                 agents_done[i] = True
                 agents_win_lose[i] = "lose"
@@ -278,9 +282,13 @@ class PredPreyEnv():
                        0 == len(self.agent_list) else False
         pred_win = False
         if(done):
-            if(0 < len([agent for agent in self.agent_list if agent.predator])):
-               pred_win = True
             agents_win_lose = ["win"]*len(self.agent_list)
+            if(self.para.pred_start > 0):
+               if(0 < len([agent for agent in self.agent_list if agent.predator])):
+                   pred_win = True
+            else:
+                if(0 == len([agent for agent in self.agent_list if not agent.predator])):
+                    pred_win = True
             for i, agent in enumerate(self.agent_list):
                 agent.to_push[-1] = (agent.to_push[-1][0], agent.to_push[-1][1], agent.to_push[-1][2], agent.to_push[-1][3], agent.to_push[-1][4], 
                                      agent.to_push[-1][5], agent.to_push[-1][6], agent.to_push[-1][7], torch.tensor(done), torch.tensor(done))

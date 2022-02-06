@@ -15,7 +15,6 @@ def episode(env, pred_brain, prey_brain, push = True):
     while(done == False):
         with torch.no_grad():
             obs_list, _, done, pred_win = env.step(obs_list, pred_brain, prey_brain, push)
-    
     rewards = {
         "pred" : [[pushing[4] for pushing in agent.to_push] for (agent, win) in env.dead_agents if agent.predator],
         "prey" : [[pushing[4] for pushing in agent.to_push] for (agent, win) in env.dead_agents if not agent.predator]}
