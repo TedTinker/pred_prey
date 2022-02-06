@@ -1,12 +1,11 @@
-from utils import parameters as para
-from utils import change_para
+from utils import parameters as para, change_para
 from train import Trainer
 
 # Train!
 
-trainer = Trainer(para, 
+trainer = Trainer(change_para(flowers = 0), 
                   training_agent = "pred", play_by_hand = False,
-                  save_folder = "empty_prey_pinned")
+                  save_folder = "empty_prey_pinned_no_flower")
 trainer.train()
 trainer.close()
 
@@ -30,8 +29,17 @@ trainer = Trainer(change_para(arena_name = "empty_arena", energy = 3000, flowers
                               pred_start = 2, pred_condition = 0, 
                               prey_start = 2, prey_condition = "pin"),
                   save_folder = "default", 
-                  pred_load_folder = "empty_prey_pinned",
+                  pred_load_folder = "empty_prey_pinned_no_flower",
                   prey_load_folder = "empty_prey_alone")
 trainer.test()
 trainer.close()
 
+
+
+
+
+trainer = Trainer(change_para(flowers = 0),
+                  save_folder = "default", 
+                  pred_load_folder = "empty_prey_pinned_no_flower")
+trainer.test()
+trainer.close()

@@ -74,8 +74,7 @@ class Arena():
         yaw = random.uniform(0, 2*pi)
         spe = get_arg(self.para, predator, "min_speed")
         energy = get_arg(self.para, predator, "energy")
-        color = [1,0,0,1] if predator else [1,1,1,1] #[0,0,1,1]
-        mass = get_arg(self.para, predator, "mass")
+        color = [1,0,0,1] if predator else [0,0,1,1]
         file = "ted_duck.urdf"
         
         pos = (pos[0], pos[1], .5)
@@ -86,7 +85,6 @@ class Arena():
         x, y = cos(yaw)*spe, sin(yaw)*spe
         p.resetBaseVelocity(p_num, (x,y,0),(0,0,0), physicsClientId = self.physicsClient)
         p.changeVisualShape(p_num, -1, rgbaColor = color, physicsClientId = self.physicsClient)
-        p.changeDynamics(p_num, -1, mass = mass)
         agent = Agent(predator, p_num, energy, pos, yaw, spe)
         return(agent)
     
@@ -108,8 +106,6 @@ class Arena():
                             physicsClientId = self.physicsClient)
         p.resetBaseVelocity(p_num, (0,0,0),(0,0,0), physicsClientId = self.physicsClient)
         p.changeVisualShape(p_num, -1, rgbaColor = color, physicsClientId = self.physicsClient)
-        p.changeDynamics(p_num, -1, mass = self.para.flower_mass, 
-                         lateralFriction = 0, spinningFriction = 0, rollingFriction = 0)
         return(p_num)
     
     def wall_collisions(self, p_num):

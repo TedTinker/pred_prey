@@ -59,8 +59,8 @@ class PredPreyEnv():
 
         x, y = cos(agent.yaw), sin(agent.yaw)
         view_matrix = p.computeViewMatrix(
-            cameraEyePosition = [agent.pos[0], agent.pos[1], .5], 
-            cameraTargetPosition = [agent.pos[0] + x, agent.pos[1] + y, .5], 
+            cameraEyePosition = [agent.pos[0] -x/2, agent.pos[1] -y/2, .5], 
+            cameraTargetPosition = [agent.pos[0] - x, agent.pos[1] - y, .5], 
             cameraUpVector = [0, 0, 1], physicsClientId = self.arena.physicsClient)
         proj_matrix = p.computeProjectionMatrixFOV(
             fov = 90, aspect = 1, nearVal = 0.2, 
@@ -142,10 +142,10 @@ class PredPreyEnv():
         agent.yaw = new_yaw
         
         old_speed = agent.spe
-        x = cos(new_yaw)*speed
-        y = sin(new_yaw)*speed
+        x = -cos(new_yaw)*speed
+        y = -sin(new_yaw)*speed
         p.resetBaseVelocity(agent.p_num, (x,y,0), (0,0,0), physicsClientId = self.arena.physicsClient)
-        agent.spe = speed
+        agent.spe = -speed
                 
         if(verbose):
             print("\n{} {}:\nOld yaw:\t{}\nChange:\t\t{}\nNew yaw:\t{}".format(
