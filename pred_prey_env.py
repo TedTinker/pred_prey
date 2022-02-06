@@ -190,17 +190,10 @@ class PredPreyEnv():
         reward_list = add_discount([p[4] for p in agent.to_push], r)
         agent.to_push = [(p[0], p[1], p[2], p[3], r, p[5], p[6], p[7], p[8], p[9]) for p, r in zip(agent.to_push, reward_list)]
   
-    def step(self, obs_list, pred_brain, prey_brain, push):
-        self.steps += 1
-        
-        for i, agent in enumerate(self.agent_list):
-            agent.age += 1
-            brain = pred_brain if agent.predator else prey_brain
-            self.get_action(agent, brain, obs_list[i])
-            yaw, spe = self.unnormalize(agent.action, agent.predator)
-            agent.energy -= spe * get_arg(self.para, agent.predator, "energy_per_speed")
-            self.change_velocity(agent, yaw, spe)
-      
+    
+  
+    
+    def simulation(self):
         agent_dists_before = self.arena.all_agent_dists(self.agent_list)
         flower_dists_before = self.arena.all_flower_dists(self.agent_list, self.flower_list)
         self.maintain_flowers()
@@ -210,33 +203,59 @@ class PredPreyEnv():
         agent_dists_closer = [before - after for before, after in zip(agent_dists_before, agent_dists_after)]
         flower_dists_after = self.arena.all_flower_dists(self.agent_list, self.flower_list)
         flower_dists_closer = [before - after for before, after in zip(flower_dists_before, flower_dists_after)]
-        
         wall_collisions = self.arena.all_wall_collisions(self.agent_list)
-        pred_prey_collisions = [False]*len(self.agent_list)
-        prey_flower_collisions = [False]*len(self.agent_list)
-        dead_flowers = []
-        for i, agent in enumerate(self.agent_list):
-            if(agent.predator):
-                for j, agent_2 in enumerate(self.agent_list):
-                    if(self.arena.agent_collisions(agent.p_num, agent_2.p_num) and
-                       not agent_2.predator):
-                        agent.energy += self.para.pred_energy_from_prey
-                        pred_prey_collisions[i] = True
-                        agent_2.energy -= self.para.pred_energy_from_prey
-                        pred_prey_collisions[j] = True
-            if(not agent.predator):
-                for j, flower in enumerate(self.flower_list):
-                    if(self.arena.agent_collisions(agent.p_num, flower)):
-                        agent.energy += self.para.prey_energy_from_flower
-                        prey_flower_collisions[i] = True
-                        dead_flowers.append(j)
-        for f in dead_flowers:
-            p.removeBody(self.flower_list[f], physicsClientId = self.arena.physicsClient)
-        self.flower_list = [flower for i, flower in enumerate(self.flower_list) if i not in dead_flowers]
+        return(agent_dists_after, agent_dists_closer, 
+               flower_dists_after, flower_dists_closer, wall_collisions)
+    
+    def replace_flowers(self, dead_flower_indexes):
+        for i in dead_flower_indexes:
+            p.removeBody(self.flower_list[i], physicsClientId = self.arena.physicsClient)
+        self.flower_list = [flower for i, flower in enumerate(self.flower_list) if i not in dead_flower_indexes]
         while(len(self.flower_list) < self.para.flowers):
             self.arena.used_spots = []
             self.flower_list.append(self.arena.make_flower())
             self.arena.used_spots = []
+  
+    def step(self, obs_list, pred_brain, prey_brain, push = True):
+        self.steps += 1
+        for i, agent in enumerate(self.agent_list):
+            agent.age += 1
+            brain = pred_brain if agent.predator else prey_brain
+            self.get_action(agent, brain, obs_list[i])
+            yaw, spe = self.unnormalize(agent.action, agent.predator)
+            agent.energy -= spe * get_arg(self.para, agent.predator, "energy_per_speed")
+            self.change_velocity(agent, yaw, spe)
+      
+        agent_dists_after, agent_dists_closer, \
+        flower_dists_after, flower_dists_closer, wall_collisions = \
+            self.simulation()
+        pred_prey_collisions =   [False]*len(self.agent_list)
+        prey_flower_collisions = [False]*len(self.agent_list)
+        agents_done =     [False]*len(self.agent_list)
+        agents_win_lose = [None] *len(self.agent_list)
+        dead_flower_indexes = []
+        
+        for i, agent in enumerate(self.agent_list):
+            if(agent.predator):
+                for j, agent_2 in enumerate(self.agent_list):
+                    if(not agent_2.predator and self.arena.agent_collisions(agent.p_num, agent_2.p_num)):
+                        agent.energy += self.para.pred_energy_from_prey
+                        agent_2.energy -= self.para.pred_energy_from_prey
+                        pred_prey_collisions[i] = True
+                        pred_prey_collisions[j] = True
+            else:
+                for j, flower in enumerate(self.flower_list):
+                    if(self.arena.agent_collisions(agent.p_num, flower)):
+                        agent.energy += self.para.prey_energy_from_flower
+                        prey_flower_collisions[i] = True
+                        dead_flower_indexes.append(j)
+            if(agent.energy <= 0):
+                agents_done[i] = True
+                agents_win_lose[i] = "lose"
+            elif(agent.age >= get_arg(self.para, agent.predator, "max_age")):
+                 agents_done[i] = True
+                 agents_win_lose[i] = "win"
+        self.replace_flowers(dead_flower_indexes)
         
         rewards = [self.get_reward(self.agent_list[i], 
                                    agent_dists_after[i], agent_dists_closer[i], 
@@ -244,38 +263,32 @@ class PredPreyEnv():
                                    wall_collisions[i], pred_prey_collisions[i], prey_flower_collisions[i])
                    for i in range(len(self.agent_list))]
         new_obs_list = [self.get_obs(agent) for agent in self.agent_list]
-        
-        dones = [True if agent.energy <= 0 or agent.age >= get_arg(self.para, agent.predator, "max_age") else False for agent in self.agent_list]
-                
+                        
         for i, agent in enumerate(self.agent_list):
             agent.to_push.append(
                 (obs_list[i][0], obs_list[i][1], obs_list[i][2], new_obs_list[i][3], rewards[i], 
-                new_obs_list[i][0], new_obs_list[i][1], new_obs_list[i][2], torch.tensor(dones[i]), torch.tensor(dones[i])))
-            if(dones[i]):
+                new_obs_list[i][0], new_obs_list[i][1], new_obs_list[i][2], torch.tensor(agents_done[i]), torch.tensor(agents_done[i])))
+            if(agents_done[i]):
                 p.removeBody(agent.p_num, physicsClientId = self.arena.physicsClient)
-                self.dead_agents.append(agent)
-                if(push):
-                    r=1
-                    self.update_rewards(agent, r, pred_prey_collisions[i])
-                    brain = pred_brain if agent.predator else prey_brain
-                    for i in range(len(agent.to_push)):
-                        brain.episodes.push(agent.to_push[i])
+                self.dead_agents.append((agent, agents_win_lose[i]))
         
-        self.agent_list = [agent for i, agent in enumerate(self.agent_list) if not dones[i]]
+        self.agent_list = [agent for i, agent in enumerate(self.agent_list) if not agents_done[i]]
         done = True if (self.para.pred_start > 0 and 0 == len([agent for agent in self.agent_list if agent.predator])) or \
                        (self.para.prey_start > 0 and 0 == len([agent for agent in self.agent_list if not agent.predator])) or \
                        0 == len(self.agent_list) else False
         pred_win = False
         if(done):
-            pred_win = True if len([agent for agent in self.agent_list if agent.predator]) > \
-                               len([agent for agent in self.agent_list if not agent.predator]) else False
+            if(0 < len([agent for agent in self.agent_list if agent.predator])):
+               pred_win = True
+            agents_win_lose = ["win"]*len(self.agent_list)
             for i, agent in enumerate(self.agent_list):
-                self.dead_agents.append(agent)
-                if(push):
+                agent.to_push[-1] = (agent.to_push[-1][0], agent.to_push[-1][1], agent.to_push[-1][2], agent.to_push[-1][3], agent.to_push[-1][4], 
+                                     agent.to_push[-1][5], agent.to_push[-1][6], agent.to_push[-1][7], torch.tensor(done), torch.tensor(done))
+                self.dead_agents.append((agent, agents_win_lose[i]))
+            if(push):
+                for agent, win in self.dead_agents:
                     r=1
-                    self.update_rewards(agent, r, pred_win)
-                    agent.to_push[-1] = (agent.to_push[-1][0], agent.to_push[-1][1], agent.to_push[-1][2], agent.to_push[-1][3], agent.to_push[-1][4], 
-                                         agent.to_push[-1][5], agent.to_push[-1][6], agent.to_push[-1][7], torch.tensor(done), torch.tensor(done))
+                    self.update_rewards(agent, r, True if win == "win" else False)
                     brain = pred_brain if agent.predator else prey_brain
                     for j in range(len(agent.to_push)):
                         brain.episodes.push(agent.to_push[j])
