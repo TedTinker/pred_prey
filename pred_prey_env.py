@@ -137,7 +137,7 @@ class PredPreyEnv():
         old_yaw = agent.yaw
         new_yaw = old_yaw + yaw_change
         new_yaw %= 2*pi
-        orn = p.getQuaternionFromEuler([0,0,new_yaw])
+        orn = p.getQuaternionFromEuler([pi/2,0,new_yaw])
         p.resetBasePositionAndOrientation(agent.p_num,(agent.pos[0], agent.pos[1], .5), orn, physicsClientId = self.arena.physicsClient)
         agent.yaw = new_yaw
         

@@ -10,6 +10,8 @@ trainer = Trainer(para,
 trainer.train()
 trainer.close()
 
+
+
 trainer = Trainer(change_para(pred_start = 0, prey_condition = 1), 
                   training_agent = "prey", play_by_hand = False,
                   done_if =    {},

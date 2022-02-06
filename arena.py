@@ -14,7 +14,6 @@ class Agent:
 
 # How to make physicsClients.
 import pybullet as p
-import pybullet_data
 
 
 
@@ -24,7 +23,7 @@ def get_physics(GUI, w, h):
         p.resetDebugVisualizerCamera(1,90,-89,(w/2,h/2,w), physicsClientId = physicsClient)
     else:   
         physicsClient = p.connect(p.DIRECT)
-    p.setAdditionalSearchPath(pybullet_data.getDataPath(), physicsClientId = physicsClient)
+    p.setAdditionalSearchPath("pybullet_data/")
     return(physicsClient)
 
 
@@ -75,17 +74,19 @@ class Arena():
         yaw = random.uniform(0, 2*pi)
         spe = get_arg(self.para, predator, "min_speed")
         energy = get_arg(self.para, predator, "energy")
-        color = [1,0,0,1] if predator else [0,0,1,1]
-        file = "sphere2red.urdf"
+        color = [1,0,0,1] if predator else [1,1,1,1] #[0,0,1,1]
+        mass = get_arg(self.para, predator, "mass")
+        file = "ted_duck.urdf"
         
         pos = (pos[0], pos[1], .5)
-        ors = p.getQuaternionFromEuler([0,0,yaw])
-        p_num = p.loadURDF(file,pos,ors,
+        orn = p.getQuaternionFromEuler([pi/2,0,yaw])
+        p_num = p.loadURDF(file,pos,orn,
                            globalScaling = self.para.pred_size if predator else self.para.prey_size, 
                            physicsClientId = self.physicsClient)
         x, y = cos(yaw)*spe, sin(yaw)*spe
         p.resetBaseVelocity(p_num, (x,y,0),(0,0,0), physicsClientId = self.physicsClient)
         p.changeVisualShape(p_num, -1, rgbaColor = color, physicsClientId = self.physicsClient)
+        p.changeDynamics(p_num, -1, mass = mass)
         agent = Agent(predator, p_num, energy, pos, yaw, spe)
         return(agent)
     
@@ -97,17 +98,19 @@ class Arena():
         roll  = random.uniform(0, 2*pi)
         pitch = random.uniform(0, 2*pi)
         yaw   = random.uniform(0, 2*pi)
-        file  = "duck_vhacd.urdf"
+        file  = "ted_sphere.urdf"
         
         pos = (pos[0], pos[1], .5)
-        ors = p.getQuaternionFromEuler([roll,pitch,yaw])
+        orn = p.getQuaternionFromEuler([roll,pitch,yaw])
         color = [random.uniform(0,1),random.uniform(0,1),random.uniform(0,1),1]
-        flower = p.loadURDF(file,pos,ors,
+        p_num = p.loadURDF(file,pos,orn,
                             globalScaling = self.para.flower_size,
                             physicsClientId = self.physicsClient)
-        p.resetBaseVelocity(flower, (0,0,0),(0,0,0), physicsClientId = self.physicsClient)
-        p.changeVisualShape(flower, -1, rgbaColor = color, physicsClientId = self.physicsClient)
-        return(flower)
+        p.resetBaseVelocity(p_num, (0,0,0),(0,0,0), physicsClientId = self.physicsClient)
+        p.changeVisualShape(p_num, -1, rgbaColor = color, physicsClientId = self.physicsClient)
+        p.changeDynamics(p_num, -1, mass = self.para.flower_mass, 
+                         lateralFriction = 0, spinningFriction = 0, rollingFriction = 0)
+        return(p_num)
     
     def wall_collisions(self, p_num):
         col = False
@@ -150,7 +153,8 @@ class Arena():
             dists = []
             for flower in flower_list:
                 dists.append(self.agent_dist(agent.p_num, flower))
-            min_dists.append(min(dists))
+            minimum = min(dists) if min(dists) != 0 else .001
+            min_dists.append(minimum)
         return(min_dists)
         
     
