@@ -225,6 +225,36 @@ class PredPreyEnv():
             self.arena.used_spots = []
             self.flower_list.append(self.arena.make_flower())
             self.arena.used_spots = []
+            
+    def done(self, pred_brain, prey_brain, push):
+        done = False
+        if(0 == len(self.agent_list)):
+            done = True
+        if(self.para.pred_start > 0 and 0 == len([agent for agent in self.agent_list if agent.predator])):
+            done = True
+        if(self.para.prey_start > 0 and 0 == len([agent for agent in self.agent_list if not agent.predator])): 
+            done = True
+            
+        pred_win = False
+        if(done):
+            for agent in self.agent_list:
+                agent.to_push[-1] = (agent.to_push[-1][0], agent.to_push[-1][1], agent.to_push[-1][2], agent.to_push[-1][3], agent.to_push[-1][4], 
+                                     agent.to_push[-1][5], agent.to_push[-1][6], agent.to_push[-1][7], torch.tensor(done), torch.tensor(done))
+                self.dead_agents.append((agent, "win"))
+            if(push):
+                for agent, win in self.dead_agents:
+                    r=1
+                    self.update_rewards(agent, r, True if win == "win" else False)
+                    brain = pred_brain if agent.predator else prey_brain
+                    for j in range(len(agent.to_push)):
+                        brain.episodes.push(agent.to_push[j])
+            if(self.para.pred_start > 0):
+               if(0 < len([agent for agent in self.agent_list if agent.predator])):
+                   pred_win = True
+            else:
+                if(self.dead_agents[-1][1] == "lose"):
+                    pred_win = True
+        return(done, pred_win)
   
     def step(self, obs_list, pred_brain, prey_brain, push = True):
         self.steps += 1
@@ -282,33 +312,8 @@ class PredPreyEnv():
             if(agents_done[i]):
                 p.removeBody(agent.p_num, physicsClientId = self.arena.physicsClient)
                 self.dead_agents.append((agent, agents_win_lose[i]))
-        
         self.agent_list = [agent for i, agent in enumerate(self.agent_list) if not agents_done[i]]
-        done = True if (self.para.pred_start > 0 and 0 == len([agent for agent in self.agent_list if agent.predator])) or \
-                       (self.para.prey_start > 0 and 0 == len([agent for agent in self.agent_list if not agent.predator])) or \
-                       0 == len(self.agent_list) else False
-        pred_win = False
-        if(done):
-            agents_win_lose = ["win"]*len(self.agent_list)
-            for i, agent in enumerate(self.agent_list):
-                agent.to_push[-1] = (agent.to_push[-1][0], agent.to_push[-1][1], agent.to_push[-1][2], agent.to_push[-1][3], agent.to_push[-1][4], 
-                                     agent.to_push[-1][5], agent.to_push[-1][6], agent.to_push[-1][7], torch.tensor(done), torch.tensor(done))
-                self.dead_agents.append((agent, agents_win_lose[i]))
-                
-            if(self.para.pred_start > 0):
-               if(0 < len([agent for agent in self.agent_list if agent.predator])):
-                   pred_win = True
-            else:
-                if(self.dead_agents[-1][1] == "lose"):
-                    pred_win = True
-
-            if(push):
-                for agent, win in self.dead_agents:
-                    r=1
-                    self.update_rewards(agent, r, True if win == "win" else False)
-                    brain = pred_brain if agent.predator else prey_brain
-                    for j in range(len(agent.to_push)):
-                        brain.episodes.push(agent.to_push[j])
+        done, pred_win = self.done(pred_brain, prey_brain, push)
         return(new_obs_list, rewards, done, pred_win)
       
 
