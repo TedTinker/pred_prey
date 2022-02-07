@@ -25,6 +25,13 @@ class PredPreyEnv():
         self.agent_list = []
         self.dead_agents = []
         self.steps, self.resets = 0, 0
+        
+    def change(self, para = para, GUI = False):
+        if(para != self.para or GUI != self.GUI):
+            self.close(True)
+            self.para = para
+            self.GUI = GUI
+            self.arena = Arena(para, self.GUI)
 
     def close(self, forever = False):
         self.arena.used_spots = []
@@ -283,16 +290,18 @@ class PredPreyEnv():
         pred_win = False
         if(done):
             agents_win_lose = ["win"]*len(self.agent_list)
-            if(self.para.pred_start > 0):
-               if(0 < len([agent for agent in self.agent_list if agent.predator])):
-                   pred_win = True
-            else:
-                if(0 == len([agent for agent in self.agent_list if not agent.predator])):
-                    pred_win = True
             for i, agent in enumerate(self.agent_list):
                 agent.to_push[-1] = (agent.to_push[-1][0], agent.to_push[-1][1], agent.to_push[-1][2], agent.to_push[-1][3], agent.to_push[-1][4], 
                                      agent.to_push[-1][5], agent.to_push[-1][6], agent.to_push[-1][7], torch.tensor(done), torch.tensor(done))
                 self.dead_agents.append((agent, agents_win_lose[i]))
+                
+            if(self.para.pred_start > 0):
+               if(0 < len([agent for agent in self.agent_list if agent.predator])):
+                   pred_win = True
+            else:
+                if(self.dead_agents[-1][1] == "lose"):
+                    pred_win = True
+
             if(push):
                 for agent, win in self.dead_agents:
                     r=1

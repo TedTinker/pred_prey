@@ -16,8 +16,7 @@ from rtd3 import RecurrentTD3
 
 
 
-
-  
+env_gui = PredPreyEnv(para, GUI = True)
 
 
 class Trainer():
@@ -37,17 +36,21 @@ class Trainer():
         self.save_folder = save_folder
         self.pred_load_folder = pred_load_folder; self.pred_load_name = pred_load_name
         self.prey_load_folder = prey_load_folder; self.prey_load_name = prey_load_name
+        self.restart_if = restart_if; self.done_if = done_if
         
         self.env = PredPreyEnv(para, GUI = False)
-        self.env_gui = PredPreyEnv(para, GUI = True)
-        self.restart_if = restart_if; self.done_if = done_if
-
+        
         self.pred_episodes, self.prey_episodes = None, None
         self.restart()
         if(play_by_hand):
             self.pred_episodes, self.prey_episodes = hand_episodes(
-                self.env_gui, self.pred, self.prey,
+                self.get_GUI(), self.pred, self.prey,
                 "by_hand", self.prey_condition)
+            
+    def get_GUI(self):
+        global env_gui
+        env_gui.change(self.para, True)
+        return(env_gui)
     
     def restart(self):
         reset_start_time()
@@ -77,13 +80,12 @@ class Trainer():
       
     def close(self):
         self.env.close(forever = True)
-        self.env_gui.close(forever = True)
         
 
       
     def one_episode(self, push = True, GUI = False):        
         if(GUI == False): GUI = keyboard.is_pressed('q') 
-        if(GUI): env = self.env_gui
+        if(GUI): env = self.get_GUI()
         else:    env = self.env
         
         pred_win, rewards = \
@@ -93,7 +95,7 @@ class Trainer():
         return(int(pred_win))
 
 
-    def epoch(self, episodes_per_epoch = 3):
+    def epoch(self, episodes_per_epoch = 3, batch_size = 32, iterations = 4):
         for _ in range(episodes_per_epoch):
             win = self.one_episode()
             self.wins.append(win)
@@ -104,14 +106,13 @@ class Trainer():
         if(type(self.para.prey_condition) in [int, float]):
             self.para.prey_condition *= .99
         
-        iterations = 4
         if(self.training_agent in ["pred", "both"]):
-            pred_losses = self.pred.update_networks(batch_size = 32, iterations = iterations)
+            pred_losses = self.pred.update_networks(batch_size = batch_size, iterations = iterations)
         else: pred_losses = np.array([[None]*3]*iterations)
         self.pred_losses = np.concatenate([self.pred_losses, pred_losses])
         
         if(self.training_agent in ["prey", "both"]):
-            prey_losses = self.prey.update_networks(batch_size = 32, iterations = iterations)
+            prey_losses = self.prey.update_networks(batch_size = batch_size, iterations = iterations)
         else: prey_losses = np.array([[None]*3]*iterations)
         if(iterations == 1):  pred_losses = np.expand_dims(pred_losses,0); prey_losses = np.expand_dims(prey_losses,0)
         self.pred_losses = np.concatenate([self.pred_losses, pred_losses])
@@ -171,8 +172,8 @@ class Trainer():
                 print("\n\nPredator condition: {}. Prey condition: {}.\n".format(
                     self.para.pred_condition, self.para.prey_condition))
                 save_pred_prey(self.pred, self.prey, post = "last", folder = self.save_folder)
-                plot_wins(self.wins_rolled, name = "wins_last".format(self.e), folder = self.save_folder)
-                plot_losses(self.pred_losses, self.prey_losses, too_long = None, name = "losses".format(self.e), folder = self.save_folder)
+                plot_wins(self.wins_rolled, name = "wins_last", folder = self.save_folder)
+                plot_losses(self.pred_losses, self.prey_losses, too_long = None, name = "losses", folder = self.save_folder)
                 break
     
     def test(self, size = 100):
