@@ -75,7 +75,7 @@ class Arena():
         spe = get_arg(self.para, predator, "min_speed")
         energy = get_arg(self.para, predator, "energy")
         color = [1,0,0,1] if predator else [0,0,1,1]
-        file = "ted_sphere.urdf" #"ted_duck.urdf"
+        file = "ted_duck.urdf"
         
         pos = (pos[0], pos[1], .5)
         orn = p.getQuaternionFromEuler([pi/2,0,yaw])
