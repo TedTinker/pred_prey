@@ -62,16 +62,16 @@ class Trainer():
         self.prey = RecurrentTD3(max_age = self.para.prey_max_age)
         if(self.pred_load_folder != None):
             self.pred, self.prey = load_pred_prey(
-                self.pred, self.prey, post = self.pred_load_name, folder = self.pred_load_folder,
+                self.pred, self.prey, suf = self.pred_load_name, folder = self.pred_load_folder,
                 load = "pred")
         if(self.prey_load_folder != None):
             self.pred, self.prey = load_pred_prey(
-                self.pred, self.prey, post = self.prey_load_name, folder = self.prey_load_folder,
+                self.pred, self.prey, suf = self.prey_load_name, folder = self.prey_load_folder,
                 load = "prey")
         if(self.pred_episodes != None and self.prey_episodes != None):
             self.pred.episodes = self.pred_episodes
             self.prey.episodes = self.prey_episodes
-        save_pred_prey(self.pred, self.prey, post = "0", folder = self.save_folder)
+        save_pred_prey(self.pred, self.prey, save = "both", suf = self.e, folder = self.save_folder)
         self.para.pred_condition = self.start_pred_condition
         self.para.prey_condition = self.start_prey_condition
         self.wins = []; self.wins_rolled = []
@@ -157,10 +157,11 @@ class Trainer():
                     self.para.pred_condition, self.para.prey_condition))
             self.epoch()
             if(self.e % how_often_to_show_and_save == 0): 
-                plot_wins(self.wins_rolled, name = "wins_{}".format(self.e), folder = self.save_folder)
+                plot_wins(self.wins_rolled, name = "wins_{}".format(str(self.e).zfill(5)), folder = self.save_folder)
                 plot_losses(self.pred_losses, self.prey_losses, too_long = 300)
-                save_pred_prey(self.pred, self.prey, post = "{}".format(self.e), folder = self.save_folder)
-            
+                save_pred_prey(self.pred, self.prey, save = "pred", suf = self.e, folder = self.save_folder)
+                save_pred_prey(self.pred, self.prey, save = "prey", suf = self.e, folder = self.save_folder)
+                
             restart, done = self.restart_or_done()
             if(restart):
                 print("This isn't working. Starting again!")
@@ -171,7 +172,7 @@ class Trainer():
                 print("\n\nFinished!\n\n")
                 print("\n\nPredator condition: {}. Prey condition: {}.\n".format(
                     self.para.pred_condition, self.para.prey_condition))
-                save_pred_prey(self.pred, self.prey, post = "last", folder = self.save_folder)
+                save_pred_prey(self.pred, self.prey, save = "both", suf = "last", folder = self.save_folder)
                 plot_wins(self.wins_rolled, name = "wins_last", folder = self.save_folder)
                 plot_losses(self.pred_losses, self.prey_losses, too_long = None, name = "losses", folder = self.save_folder)
                 break

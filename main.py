@@ -4,7 +4,7 @@ from train import Trainer
 
 
 trainer_dict = {    
-    "pred_easy" : lambda : Trainer(change_para(flowers = 0), 
+    "pred_easy" : lambda : Trainer(change_para(flowers = 1), 
                       training_agent = "pred", play_by_hand = False,
                       save_folder = "empty_prey_pinned_no_flower"),
     
@@ -12,7 +12,7 @@ trainer_dict = {
                       training_agent = "pred", play_by_hand = False,
                       pred_load_folder = "empty_prey_pinned_no_flower"),
     
-    "prey_easy" : lambda : Trainer(change_para(pred_start = 0, prey_condition = 1), 
+    "prey_easy" : lambda : Trainer(change_para(pred_condition = "pin", prey_condition = 1), 
                       training_agent = "prey", play_by_hand = False,
                       restart_if = {},
                       done_if =    {"prey" : {200 : .01}},

@@ -276,13 +276,17 @@ def plot_wins(wins, max_len = None, name = None, folder = "default"):
   
 # How to save/load pred/prey
 
-def save_pred_prey(pred, prey, post = "", folder = "default"):
-    torch.save(pred.state_dict(), "saves/" + folder + "/preds/pred_{}.pt".format(post))
-    torch.save(prey.state_dict(), "saves/" + folder + "/preys/prey_{}.pt".format(post))
+def save_pred_prey(pred, prey, save = "both", suf = "", folder = "default"):
+    if(type(suf) == int): suf = str(suf).zfill(5)
+    if(save == "both" or save == "pred"):
+        torch.save(pred.state_dict(), "saves/" + folder + "/preds/pred_{}.pt".format(suf))
+    if(save == "both" or save == "prey"):
+        torch.save(prey.state_dict(), "saves/" + folder + "/preys/prey_{}.pt".format(suf))
 
-def load_pred_prey(pred, prey, load = "both", post = "last", folder = "default"):
+def load_pred_prey(pred, prey, load = "both", suf = "last", folder = "default"):
+    if(type(suf) == int): suf = str(suf).zfill(5)
     if(load == "both" or load == "pred"):
-        pred.load_state_dict(torch.load("saves/" + folder + "/preds/pred_{}.pt".format(post)))
+        pred.load_state_dict(torch.load("saves/" + folder + "/preds/pred_{}.pt".format(suf)))
     if(load == "both" or load == "prey"):
-        prey.load_state_dict(torch.load("saves/" + folder + "/preys/prey_{}.pt".format(post)))
+        prey.load_state_dict(torch.load("saves/" + folder + "/preys/prey_{}.pt".format(suf)))
     return(pred, prey)
