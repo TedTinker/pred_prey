@@ -172,7 +172,7 @@ class Trainer():
                 print("\n\nFinished!\n\n")
                 print("\n\nPredator condition: {}. Prey condition: {}.\n".format(
                     self.para.pred_condition, self.para.prey_condition))
-                save_pred_prey(self.pred, self.prey, save = "both", suf = "last", folder = self.save_folder)
+                save_pred_prey(self.pred, self.prey, save = "both", suf = "", folder = self.save_folder)
                 delete_with_name("wins", folder = self.save_folder, subfolder = "plots")
                 plot_wins(self.wins_rolled, name = "wins_last", folder = self.save_folder)
                 plot_losses(self.pred_losses, self.prey_losses, too_long = None, name = "losses", folder = self.save_folder)

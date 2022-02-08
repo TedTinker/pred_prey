@@ -172,31 +172,46 @@ class PredPreyEnv():
         agent.action, agent.hidden = brain.act(
             obs[0], obs[1], obs[2], obs[3], agent.hidden, 
             get_arg(self.para, agent.predator, "condition"))
-
-    def get_reward(self, agent, dist, closer, flower_dist, flower_closer, collision, pred_hits_prey, prey_hits_flower):
-        dist_d = get_arg(self.para, agent.predator, "reward_dist")
-        if(not agent.predator and self.para.pred_start == 0): dist_d = 0
-        closer_d = get_arg(self.para, agent.predator, "reward_dist_closer")
-        f_dist_d = get_arg(self.para, agent.predator, "reward_flower_dist")
-        f_closer_d = get_arg(self.para, agent.predator, "reward_flower_dist_closer")
-        col_d = get_arg(self.para, agent.predator, "reward_collision")
         
-        r_dist = (1/dist - .7) * dist_d
-        if(pred_hits_prey): 
-            r_dist = 2.5 if agent.predator else -2.5
-        r_closer = closer * closer_d
-        r_f_dist = (1/flower_dist - .7) * f_dist_d
-        if(prey_hits_flower): 
-            r_f_dist = 2.5 if agent.predator else -2.5
-        r_f_closer = flower_closer * f_closer_d
-        if(prey_hits_flower):
-            r_f_closer = 0
-        r_col    = -col_d if collision else 0
-        r = r_dist + r_closer + r_f_dist + r_f_closer + r_col
-        return(r)
-    
-    def update_rewards(self, agent, r, win):
-        r = r if win else -r
+        
+    def finalize_rewards(self):
+        for agent, win_lose in self.dead_agents:
+            dist_d = get_arg(self.para, agent.predator, "reward_dist")
+            if(not agent.predator and self.para.pred_start == 0): dist_d = 0
+            closer_d = get_arg(self.para, agent.predator, "reward_dist_closer")
+            f_dist_d = get_arg(self.para, agent.predator, "reward_flower_dist")
+            f_closer_d = get_arg(self.para, agent.predator, "reward_flower_dist_closer")
+            col_d = get_arg(self.para, agent.predator, "reward_collision")
+            
+            new_to_push = []
+            
+            for i in range(len(agent.to_push)):
+                dist, closer, flower_dist, flower_closer, \
+                collision, pred_hits_prey, prey_hits_flower = \
+                    agent.to_push[i][4]
+                r_dist = (1/dist - .7) * dist_d
+                if(pred_hits_prey): 
+                    r_dist = 2.5 if agent.predator else -2.5
+                r_closer = closer * closer_d
+                r_f_dist = (1/flower_dist - .7) * f_dist_d
+                if(prey_hits_flower): 
+                    r_f_dist = 2.5 if agent.predator else -2.5
+                r_f_closer = flower_closer * f_closer_d
+                if(prey_hits_flower):
+                    r_f_closer = 0
+                r_col    = -col_d if collision else 0
+                r = r_dist + r_closer + r_f_dist + r_f_closer + r_col
+                
+                new_to_push.append((agent.to_push[i][0], agent.to_push[i][1], agent.to_push[i][2], 
+                                    agent.to_push[i][3], r, agent.to_push[i][5], agent.to_push[i][6], 
+                                    agent.to_push[i][7], agent.to_push[i][8], agent.to_push[i][9]))
+            agent.to_push = new_to_push
+            
+            #print("{} {}: {}".format("pred" if agent.predator else "prey", agent.p_num, win))
+            self.add_win(agent, win_lose)
+
+    def add_win(self, agent, win_lose, r = 1):
+        r = r if win_lose else -r
         reward_list = add_discount([p[4] for p in agent.to_push], r)
         agent.to_push = [(p[0], p[1], p[2], p[3], r, p[5], p[6], p[7], p[8], p[9]) for p, r in zip(agent.to_push, reward_list)]
   
@@ -234,25 +249,25 @@ class PredPreyEnv():
             done = True
         if(self.para.prey_start > 0 and 0 == len([agent for agent in self.agent_list if not agent.predator])): 
             done = True
-            
-        pred_win = False
+        
+        pred_win = None
         if(done):
             for agent in self.agent_list:
                 agent.to_push[-1] = (agent.to_push[-1][0], agent.to_push[-1][1], agent.to_push[-1][2], agent.to_push[-1][3], agent.to_push[-1][4], 
                                      agent.to_push[-1][5], agent.to_push[-1][6], agent.to_push[-1][7], torch.tensor(done), torch.tensor(done))
-                self.dead_agents.append((agent, "win"))
+                self.dead_agents.append((agent, True))
+            self.finalize_rewards()
             if(push):
                 for agent, win in self.dead_agents:
-                    r=1
-                    self.update_rewards(agent, r, True if win == "win" else False)
                     brain = pred_brain if agent.predator else prey_brain
                     for j in range(len(agent.to_push)):
                         brain.episodes.push(agent.to_push[j])
+            pred_win = False
             if(self.para.pred_start > 0):
                if(0 < len([agent for agent in self.agent_list if agent.predator])):
                    pred_win = True
             else:
-                if(self.dead_agents[-1][1] == "lose"):
+                if(self.dead_agents[-1][1] == False):
                     pred_win = True
         return(done, pred_win)
   
@@ -292,16 +307,15 @@ class PredPreyEnv():
                             dead_flower_indexes.append(j)
             if(agent.energy <= 0):
                 agents_done[i] = True
-                agents_win_lose[i] = "lose"
+                agents_win_lose[i] = False
             elif(agent.age >= get_arg(self.para, agent.predator, "max_age")):
                  agents_done[i] = True
-                 agents_win_lose[i] = "win"
+                 agents_win_lose[i] = True
         self.replace_flowers(dead_flower_indexes)
         
-        rewards = [self.get_reward(self.agent_list[i], 
-                                   agent_dists_after[i], agent_dists_closer[i], 
-                                   flower_dists_after[i], flower_dists_closer[i],
-                                   wall_collisions[i], pred_prey_collisions[i], prey_flower_collisions[i])
+        rewards = [(agent_dists_after[i], agent_dists_closer[i],
+                    flower_dists_after[i], flower_dists_closer[i],
+                    wall_collisions[i], pred_prey_collisions[i], prey_flower_collisions[i])
                    for i in range(len(self.agent_list))]
         new_obs_list = [self.get_obs(agent) for agent in self.agent_list]
                         
