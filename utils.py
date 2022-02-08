@@ -165,7 +165,11 @@ def save_plot(name, folder = "default"):
     make_folder(folder)
     plt.savefig("saves/"+folder+"/plots/"+name+".png")
   
-  
+def delete_with_name(name, folder = "default", subfolder = "plots"):
+    files = os.listdir("saves/{}/{}".format(folder, subfolder))
+    for file in files:
+        if(file.startswith(name)):
+            os.remove("saves/{}/{}/{}".format(folder, subfolder, file))
   
   
   

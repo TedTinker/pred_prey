@@ -9,7 +9,7 @@ from math import pi
 from utils import parameters as para
 from utils import parameters, delete_these, get_rolling_average, \
     duration, reset_start_time, remove_folder, make_folder, plot_wins, plot_losses, plot_rewards, \
-    save_pred_prey, load_pred_prey
+    save_pred_prey, load_pred_prey, delete_with_name
 from pred_prey_env import PredPreyEnv
 from how_to_play import episode, hand_episodes
 from rtd3 import RecurrentTD3
@@ -173,6 +173,7 @@ class Trainer():
                 print("\n\nPredator condition: {}. Prey condition: {}.\n".format(
                     self.para.pred_condition, self.para.prey_condition))
                 save_pred_prey(self.pred, self.prey, save = "both", suf = "last", folder = self.save_folder)
+                delete_with_name("wins", folder = self.save_folder, subfolder = "plots")
                 plot_wins(self.wins_rolled, name = "wins_last", folder = self.save_folder)
                 plot_losses(self.pred_losses, self.prey_losses, too_long = None, name = "losses", folder = self.save_folder)
                 break
