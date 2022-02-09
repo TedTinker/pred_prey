@@ -129,15 +129,9 @@ def get_rolling_average(wins, roll = 100):
 
 
 # How to add discount to a list.
-def add_discount(rewards, last, GAMMA = .9):
-    discounts = [last * (GAMMA**i) for i in range(len(rewards))]
-    discounts.reverse()
-    return([r + d for r, d in zip(rewards, discounts)])
-
-
-def spread_discount(rewards, GAMMA = .99):
+def add_discount(rewards, GAMMA = .99):
     rewards.reverse()
-    discounted = [], d = 0
+    discounted = []; d = 0
     for r in rewards:
         if(r != 0): d = r
         discounted.insert(0, d)

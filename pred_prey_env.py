@@ -180,30 +180,29 @@ class PredPreyEnv():
             f_closer_d = get_arg(self.para, agent.predator, "reward_flower_dist_closer")
             col_d = get_arg(self.para, agent.predator, "reward_collision")
             
-            new_to_push = []
+            new_rewards = []
             
             for i in range(len(agent.to_push)):
-                closer, flower_closer, collision, pred_hits_prey, prey_hits_flower = agent.to_push[i][4]
+                closer, flower_closer, wall_collision, pred_hits_prey, prey_hits_flower = agent.to_push[i][4]
                 r_closer = closer * closer_d
                 r_f_closer = flower_closer * f_closer_d
                 if(prey_hits_flower):
                     r_f_closer = 0
-                r_col    = -col_d if collision else 0
+                r_col    = -col_d if wall_collision else 0
                 r = r_closer + r_f_closer + r_col
+                new_rewards.append(r)
                 
-                new_to_push.append((agent.to_push[i][0], agent.to_push[i][1], agent.to_push[i][2], 
-                                    agent.to_push[i][3], r, agent.to_push[i][5], agent.to_push[i][6], 
-                                    agent.to_push[i][7], agent.to_push[i][8], agent.to_push[i][9]))
-            agent.to_push = new_to_push
+            win_points = [0]*(len(agent.to_push)-1) + [1 if win_lose else -1]
+            win_points = add_discount(win_points, .9)
+            new_rewards = [r + w for (r, w) in zip(new_rewards, win_points)]
+                
+            for i in range(len(agent.to_push)): 
+                agent.to_push[i] = (agent.to_push[i][0], agent.to_push[i][1], agent.to_push[i][2], 
+                                    agent.to_push[i][3], new_rewards[i], agent.to_push[i][5], agent.to_push[i][6], 
+                                    agent.to_push[i][7], agent.to_push[i][8], agent.to_push[i][9])
             
-            self.add_win(agent, win_lose)
 
-    def add_win(self, agent, win_lose, r = 1):
-        r = r if win_lose else -r
-        reward_list = add_discount([p[4] for p in agent.to_push], r)
-        agent.to_push = [(p[0], p[1], p[2], p[3], r, p[5], p[6], p[7], p[8], p[9]) for p, r in zip(agent.to_push, reward_list)]
-  
-    
+
   
     
     def simulation(self):
