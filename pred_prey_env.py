@@ -176,38 +176,26 @@ class PredPreyEnv():
         
     def finalize_rewards(self):
         for agent, win_lose in self.dead_agents:
-            dist_d = get_arg(self.para, agent.predator, "reward_dist")
-            if(not agent.predator and self.para.pred_start == 0): dist_d = 0
             closer_d = get_arg(self.para, agent.predator, "reward_dist_closer")
-            f_dist_d = get_arg(self.para, agent.predator, "reward_flower_dist")
             f_closer_d = get_arg(self.para, agent.predator, "reward_flower_dist_closer")
             col_d = get_arg(self.para, agent.predator, "reward_collision")
             
             new_to_push = []
             
             for i in range(len(agent.to_push)):
-                dist, closer, flower_dist, flower_closer, \
-                collision, pred_hits_prey, prey_hits_flower = \
-                    agent.to_push[i][4]
-                r_dist = (1/dist - .7) * dist_d
-                if(pred_hits_prey): 
-                    r_dist = 2.5 if agent.predator else -2.5
+                closer, flower_closer, collision, pred_hits_prey, prey_hits_flower = agent.to_push[i][4]
                 r_closer = closer * closer_d
-                r_f_dist = (1/flower_dist - .7) * f_dist_d
-                if(prey_hits_flower): 
-                    r_f_dist = 2.5 if agent.predator else -2.5
                 r_f_closer = flower_closer * f_closer_d
                 if(prey_hits_flower):
                     r_f_closer = 0
                 r_col    = -col_d if collision else 0
-                r = r_dist + r_closer + r_f_dist + r_f_closer + r_col
+                r = r_closer + r_f_closer + r_col
                 
                 new_to_push.append((agent.to_push[i][0], agent.to_push[i][1], agent.to_push[i][2], 
                                     agent.to_push[i][3], r, agent.to_push[i][5], agent.to_push[i][6], 
                                     agent.to_push[i][7], agent.to_push[i][8], agent.to_push[i][9]))
             agent.to_push = new_to_push
             
-            #print("{} {}: {}".format("pred" if agent.predator else "prey", agent.p_num, win))
             self.add_win(agent, win_lose)
 
     def add_win(self, agent, win_lose, r = 1):
@@ -313,8 +301,7 @@ class PredPreyEnv():
                  agents_win_lose[i] = True
         self.replace_flowers(dead_flower_indexes)
         
-        rewards = [(agent_dists_after[i], agent_dists_closer[i],
-                    flower_dists_after[i], flower_dists_closer[i],
+        rewards = [(agent_dists_closer[i], flower_dists_closer[i],
                     wall_collisions[i], pred_prey_collisions[i], prey_flower_collisions[i])
                    for i in range(len(self.agent_list))]
         new_obs_list = [self.get_obs(agent) for agent in self.agent_list]

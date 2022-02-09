@@ -22,9 +22,7 @@ def get_args():
     parser.add_argument('--pred_min_speed',         type=float, default = 10)
     parser.add_argument('--pred_max_speed',         type=float, default = 50)
     parser.add_argument('--pred_max_yaw_change',    type=float, default = pi/2)
-    parser.add_argument('--pred_reward_dist',       type=float, default = -.1)
     parser.add_argument('--pred_reward_dist_closer',type=float, default = 10)
-    parser.add_argument('--pred_reward_flower_dist',type=float, default = 0)
     parser.add_argument('--pred_reward_flower_dist_closer',type=float, default = 0)
     parser.add_argument('--pred_reward_collision',  type=float, default = -1)
     
@@ -34,14 +32,12 @@ def get_args():
     parser.add_argument('--prey_max_age',           type=int,   default = 500)
     parser.add_argument('--prey_energy',            type=float, default = 3000)
     parser.add_argument('--prey_energy_per_speed',  type=float, default = 1)
-    parser.add_argument('--prey_energy_from_flower',type=float, default = 2000)
+    parser.add_argument('--prey_energy_from_flower',type=float, default = 1000)
     parser.add_argument('--prey_image_size',        type=int,   default = 16)
     parser.add_argument('--prey_min_speed',         type=float, default = 10)
     parser.add_argument('--prey_max_speed',         type=float, default = 50)
     parser.add_argument('--prey_max_yaw_change',    type=float, default = pi/2)
-    parser.add_argument('--prey_reward_dist',       type=float, default = .1)
     parser.add_argument('--prey_reward_dist_closer',type=float, default = -10)
-    parser.add_argument('--prey_reward_flower_dist',type=float, default = -.1)
     parser.add_argument('--prey_reward_flower_dist_closer',type=float, default = 10)
     parser.add_argument('--prey_reward_collision',  type=float, default = -1)
     
@@ -137,6 +133,16 @@ def add_discount(rewards, last, GAMMA = .9):
     discounts = [last * (GAMMA**i) for i in range(len(rewards))]
     discounts.reverse()
     return([r + d for r, d in zip(rewards, discounts)])
+
+
+def spread_discount(rewards, GAMMA = .99):
+    rewards.reverse()
+    discounted = [], d = 0
+    for r in rewards:
+        if(r != 0): d = r
+        discounted.insert(0, d)
+        d *= GAMMA
+    return(discounted)
             
             
             
