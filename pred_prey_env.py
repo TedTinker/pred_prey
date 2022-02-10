@@ -66,7 +66,7 @@ class PredPreyEnv():
 
         x, y = cos(agent.yaw), sin(agent.yaw)
         view_matrix = p.computeViewMatrix(
-            cameraEyePosition = [agent.pos[0] -x/2, agent.pos[1] -y/2, .5], 
+            cameraEyePosition = [agent.pos[0], agent.pos[1], .5], 
             cameraTargetPosition = [agent.pos[0] - x, agent.pos[1] - y, .5], 
             cameraUpVector = [0, 0, 1], physicsClientId = self.arena.physicsClient)
         proj_matrix = p.computeProjectionMatrixFOV(
@@ -187,7 +187,7 @@ class PredPreyEnv():
                 r_closer = closer * closer_d
                 r_f_closer = flower_closer * f_closer_d
                 if(prey_hits_flower):
-                    r_f_closer = 0
+                    r_f_closer = 1
                 r_col    = -col_d if wall_collision else 0
                 r = r_closer + r_f_closer + r_col
                 new_rewards.append(r)
