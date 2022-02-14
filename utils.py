@@ -195,57 +195,37 @@ def plot_rewards(rewards, name = None, folder = "default"):
   
   
 # How to plot losses.
-def plot_losses(pred_losses, prey_losses, too_long = None, name = None, folder = "default"):
-  
-    pred_length = len(pred_losses)
-    pred_x = [i for i in range(1, pred_length + 1)]
-    if(too_long != None and pred_length > too_long):
-        pred_x = pred_x[-too_long:]; pred_losses = pred_losses[-too_long:]
-    pred_actor_x  = [x_ for i, x_ in enumerate(pred_x) if pred_losses[i][0] != None]
-    pred_actor_y = [l[0] for l in pred_losses if l[0] != None]
-    pred_critic_x = [x_ for i, x_ in enumerate(pred_x) if pred_losses[i][1] != None]
-    pred_critic_1_y = [l[1] for l in pred_losses if l[1] != None]
-    pred_critic_2_y = [l[2] for l in pred_losses if l[2] != None]
+def plot_losses(losses, pred = True, too_long = None, name = None, folder = "default"):
     
-    if(len(pred_critic_x) >= 1):
+    color_1 = "red" if pred else "blue"
+    color_2 = "lightcoral" if pred else "turquoise"
+    title = "Predator Losses" if pred else "Prey Losses"
+    if(name != None):
+        name = "pred_" + name if pred else "prey_" + name
+    
+    length = len(losses)
+    x = [i for i in range(1, length + 1)]
+    if(too_long != None and length > too_long):
+        x = x[-too_long:]; losses = losses[-too_long:]
+    actor_x  = [x_ for i, x_ in enumerate(x) if losses[i][0] != None]
+    actor_y = [l[0] for l in losses if l[0] != None]
+    critic_x = [x_ for i, x_ in enumerate(x) if losses[i][1] != None]
+    critic_1_y = [l[1] for l in losses if l[1] != None]
+    critic_2_y = [l[2] for l in losses if l[2] != None]
+    
+    if(len(critic_x) >= 1):
         fig, ax1 = plt.subplots() 
         ax2 = ax1.twinx() 
-        ax1.plot(pred_actor_x, pred_actor_y, color = "#ff0000", label = "Actor")
-        ax2.plot(pred_critic_x, pred_critic_1_y, color = "lightcoral", linestyle = "--", label = "Critic")
-        ax2.plot(pred_critic_x, pred_critic_2_y, color = "lightcoral", linestyle = ":", label = "Critic")
+        ax1.plot(actor_x, actor_y, color = color_1, label = "Actor")
+        ax2.plot(critic_x, critic_1_y, color = color_2, linestyle = "--", label = "Critic")
+        ax2.plot(critic_x, critic_2_y, color = color_2, linestyle = ":", label = "Critic")
         ax1.legend(loc = 'upper left')
         ax2.legend(loc = 'lower left')
-        plt.title("Predator Losses")
+        plt.title(title)
         plt.xlabel("Training iterations")
         ax1.set_ylabel("Actor losses")
         ax2.set_ylabel("Critic losses")
-        if(name!=None): save_plot("pred_"+name, folder)
-        plt.show()
-        plt.close()
-    
-    prey_length = len(prey_losses)
-    prey_x = [i for i in range(1, prey_length + 1)]
-    if(too_long != None and prey_length > too_long):
-        prey_x = prey_x[-too_long:]; prey_losses = prey_losses[-too_long:]
-    prey_actor_x  = [x_ for i, x_ in enumerate(prey_x) if prey_losses[i][0] != None]
-    prey_actor_y = [l[0] for l in prey_losses if l[0] != None]
-    prey_critic_x = [x_ for i, x_ in enumerate(prey_x) if prey_losses[i][1] != None]
-    prey_critic_1_y = [l[1] for l in prey_losses if l[1] != None]
-    prey_critic_2_y = [l[2] for l in prey_losses if l[2] != None]
-    
-    if(len(prey_critic_x) >= 1):
-        fig, ax1 = plt.subplots() 
-        ax2 = ax1.twinx() 
-        ax1.plot(prey_actor_x, prey_actor_y, color = "#0000ff", label = "Actor")
-        ax2.plot(prey_critic_x, prey_critic_1_y, color = "turquoise", linestyle = "--", label = "Critic")
-        ax2.plot(prey_critic_x, prey_critic_2_y, color = "turquoise", linestyle = ":", label = "Critic")
-        ax1.legend(loc = 'upper left')
-        ax2.legend(loc = 'lower left')
-        plt.title("Prey Losses")
-        plt.xlabel("Training iterations")
-        ax1.set_ylabel("Actor losses")
-        ax2.set_ylabel("Critic losses")
-        if(name!=None): save_plot("prey_"+name, folder)
+        if(name!=None): save_plot(name, folder)
         plt.show()
         plt.close()
   

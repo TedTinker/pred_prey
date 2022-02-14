@@ -118,7 +118,9 @@ class Trainer():
         self.pred_losses = np.concatenate([self.pred_losses, pred_losses])
         self.prey_losses = np.concatenate([self.prey_losses, prey_losses])
     
-        if(keyboard.is_pressed('q') ): plot_losses(self.pred_losses, self.prey_losses, too_long = 300)
+        if(keyboard.is_pressed('q') ): 
+            plot_losses(self.pred_losses, True, too_long = 300)
+            plot_losses(self.prey_losses, False, too_long = 300)
 
 
     def restart_or_done(self):
@@ -158,7 +160,8 @@ class Trainer():
             self.epoch()
             if(self.e % how_often_to_show_and_save == 0): 
                 plot_wins(self.wins_rolled, name = "wins_{}".format(str(self.e).zfill(5)), folder = self.save_folder)
-                plot_losses(self.pred_losses, self.prey_losses, too_long = 300)
+                plot_losses(self.pred_losses, True, too_long = 300)
+                plot_losses(self.prey_losses, False, too_long = 300)
                 save_pred_prey(self.pred, self.prey, save = "pred", suf = self.e, folder = self.save_folder)
                 save_pred_prey(self.pred, self.prey, save = "prey", suf = self.e, folder = self.save_folder)
                 
@@ -175,7 +178,8 @@ class Trainer():
                 save_pred_prey(self.pred, self.prey, save = "both", suf = "last", folder = self.save_folder)
                 delete_with_name("wins", folder = self.save_folder, subfolder = "plots")
                 plot_wins(self.wins_rolled, name = "wins_last", folder = self.save_folder)
-                plot_losses(self.pred_losses, self.prey_losses, too_long = None, name = "losses", folder = self.save_folder)
+                plot_losses(self.pred_losses, True, too_long = None, name = "losses", folder = self.save_folder)
+                plot_losses(self.prey_losses, False, too_long = None, name = "losses", folder = self.save_folder)
                 break
     
     def test(self, size = 100):
