@@ -154,6 +154,7 @@ def remove_folder(folder):
     shutil.rmtree("saves/" + folder)
 
 def make_folder(folder):
+    if(folder == None): return
     files = os.listdir("saves")
     if(folder in files): return
     os.mkdir("saves/"+folder)
@@ -260,7 +261,8 @@ def plot_wins(wins, max_len = None, name = None, folder = "default"):
   
 # How to save/load pred/prey
 
-def save_pred_prey(pred, prey, save = "both", suf = "", folder = "default"):
+def save_pred_prey(pred, prey, save = "both", suf = "", folder = None):
+    if(folder == None): return
     if(type(suf) == int): suf = str(suf).zfill(5)
     if(save == "both" or save == "pred"):
         torch.save(pred.state_dict(), "saves/" + folder + "/preds/pred_{}.pt".format(suf))
