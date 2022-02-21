@@ -22,9 +22,12 @@ def get_args():
     parser.add_argument('--pred_min_speed',             type=float, default = 10)
     parser.add_argument('--pred_max_speed',             type=float, default = 50)
     parser.add_argument('--pred_max_yaw_change',        type=float, default = pi/2)
+    parser.add_argument('--pred_reward_agent_col',      type=float, default = 0)
     parser.add_argument('--pred_reward_agent_closer',   type=float, default = 10)
+    parser.add_argument('--pred_reward_flower_col',     type=float, default = 0)
     parser.add_argument('--pred_reward_flower_closer',  type=float, default = 0)
     parser.add_argument('--pred_reward_wall_col',       type=float, default = -1)
+    parser.add_argument('--pred_reward_win',            type=float, default = 1)
     
     parser.add_argument('--prey_condition',                         default = "pin")
     parser.add_argument('--prey_start',                 type=int,   default = 1)
@@ -37,9 +40,12 @@ def get_args():
     parser.add_argument('--prey_min_speed',             type=float, default = 10)
     parser.add_argument('--prey_max_speed',             type=float, default = 50)
     parser.add_argument('--prey_max_yaw_change',        type=float, default = pi/2)
+    parser.add_argument('--prey_reward_agent_col',      type=float, default = 0)
     parser.add_argument('--prey_reward_agent_closer',   type=float, default = -10)
+    parser.add_argument('--prey_reward_flower_col',     type=float, default = 0)
     parser.add_argument('--prey_reward_flower_closer',  type=float, default = 10)
     parser.add_argument('--prey_reward_wall_col',       type=float, default = -1)
+    parser.add_argument('--prey_reward_win',            type=float, default = 1)
     
     return parser.parse_args()
 

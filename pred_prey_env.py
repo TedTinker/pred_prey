@@ -176,25 +176,36 @@ class PredPreyEnv():
         
     def finalize_rewards(self):
         for agent, win_lose in self.dead_agents:
+            agent_col = get_arg(self.para, agent.predator, "reward_agent_col")
+            flower_col = get_arg(self.para, agent.predator, "reward_flower_col")
+            wall_col = get_arg(self.para, agent.predator, "reward_wall_col")
             closer_d = get_arg(self.para, agent.predator, "reward_agent_closer")
             f_closer_d = get_arg(self.para, agent.predator, "reward_flower_closer")
-            col_d = get_arg(self.para, agent.predator, "reward_wall_col")
+            win_d = get_arg(self.para, agent.predator, "reward_win")
             
+            agent_col_rewards = []
+            flower_col_rewards = []
+            wall_col_rewards = []
             new_rewards = []
             
             for i in range(len(agent.to_push)):
-                closer, flower_closer, wall_collision, pred_hits_prey, prey_hits_flower = agent.to_push[i][4]
+                closer, flower_closer, wall_collision, agent_collision, flower_collision = agent.to_push[i][4]
                 r_closer = closer * closer_d
                 r_f_closer = flower_closer * f_closer_d
-                if(prey_hits_flower):
-                    r_f_closer = 1
-                r_col    = -col_d if wall_collision else 0
-                r = r_closer + r_f_closer + r_col
+                r = r_closer + r_f_closer
                 new_rewards.append(r)
+                agent_col_rewards.append(0 if not agent_collision else agent_col)
+                flower_col_rewards.append(0 if not flower_collision else flower_col)
+                wall_col_rewards.append(0 if not wall_collision else wall_col)
                 
-            win_points = [0]*(len(agent.to_push)-1) + [1 if win_lose else -1]
+            agent_col_rewards = add_discount(agent_col_rewards, .9)
+            flower_col_rewards = add_discount(flower_col_rewards, .9)
+            wall_col_rewards = add_discount(wall_col_rewards, .9)
+            win_points = [0]*(len(agent.to_push)-1) + [win_d if win_lose else -win_d]
             win_points = add_discount(win_points, .9)
-            new_rewards = [r + w for (r, w) in zip(new_rewards, win_points)]
+            
+            new_rewards = [r + a + b + c + d for (r, a, b, c, d) in zip(
+                new_rewards, agent_col_rewards, flower_col_rewards, wall_col_rewards, win_points)]
                 
             for i in range(len(agent.to_push)): 
                 agent.to_push[i] = (agent.to_push[i][0], agent.to_push[i][1], agent.to_push[i][2], 
