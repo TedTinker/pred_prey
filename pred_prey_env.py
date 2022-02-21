@@ -176,9 +176,9 @@ class PredPreyEnv():
         
     def finalize_rewards(self):
         for agent, win_lose in self.dead_agents:
-            closer_d = get_arg(self.para, agent.predator, "reward_dist_closer")
-            f_closer_d = get_arg(self.para, agent.predator, "reward_flower_dist_closer")
-            col_d = get_arg(self.para, agent.predator, "reward_collision")
+            closer_d = get_arg(self.para, agent.predator, "reward_agent_closer")
+            f_closer_d = get_arg(self.para, agent.predator, "reward_flower_closer")
+            col_d = get_arg(self.para, agent.predator, "reward_wall_col")
             
             new_rewards = []
             
