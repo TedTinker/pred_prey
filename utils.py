@@ -22,12 +22,12 @@ def get_args():
     parser.add_argument('--pred_min_speed',             type=float, default = 10)
     parser.add_argument('--pred_max_speed',             type=float, default = 50)
     parser.add_argument('--pred_max_yaw_change',        type=float, default = pi/2)
-    parser.add_argument('--pred_reward_agent_col',      type=float, default = 0)
+    parser.add_argument('--pred_reward_agent_col',      type=float, default = 1)
     parser.add_argument('--pred_reward_flower_col',     type=float, default = 0)
     parser.add_argument('--pred_reward_wall_col',       type=float, default = -1)
     parser.add_argument('--pred_reward_agent_closer',   type=float, default = 10)
     parser.add_argument('--pred_reward_flower_closer',  type=float, default = 0)
-    parser.add_argument('--pred_reward_win',            type=float, default = 1)
+    parser.add_argument('--pred_reward_win',            type=float, default = 0)
     
     parser.add_argument('--prey_condition',                         default = "pin")
     parser.add_argument('--prey_start',                 type=int,   default = 1)
@@ -40,12 +40,12 @@ def get_args():
     parser.add_argument('--prey_min_speed',             type=float, default = 10)
     parser.add_argument('--prey_max_speed',             type=float, default = 50)
     parser.add_argument('--prey_max_yaw_change',        type=float, default = pi/2)
-    parser.add_argument('--prey_reward_agent_col',      type=float, default = 0)
-    parser.add_argument('--prey_reward_flower_col',     type=float, default = 0)
+    parser.add_argument('--prey_reward_agent_col',      type=float, default = -1)
+    parser.add_argument('--prey_reward_flower_col',     type=float, default = 1)
     parser.add_argument('--prey_reward_wall_col',       type=float, default = -1)
     parser.add_argument('--prey_reward_agent_closer',   type=float, default = -10)
     parser.add_argument('--prey_reward_flower_closer',  type=float, default = 10)
-    parser.add_argument('--prey_reward_win',            type=float, default = 1)
+    parser.add_argument('--prey_reward_win',            type=float, default = 0)
     
     return parser.parse_args()
 
@@ -188,6 +188,7 @@ def plot_rewards(rewards, name = None, folder = "default"):
     total_length = max([len(rewards["pred"][i]) for i in range(len(rewards["pred"]))] + 
                         [len(rewards["prey"][i]) for i in range(len(rewards["prey"]))])
     x = [i for i in range(1, total_length + 1)]
+    plt.plot(x, [0 for _ in range(total_length)], "--", color = "black", alpha = .5)
     for pred_reward in rewards["pred"]:
         plt.plot(x[:len(pred_reward)], pred_reward, color = "lightcoral", label = "Predator") # Predators
     for prey_reward in rewards["prey"]:
