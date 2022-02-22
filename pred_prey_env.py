@@ -181,7 +181,6 @@ class PredPreyEnv():
             wall_col = get_arg(self.para, agent.predator, "reward_wall_col")
             closer_d = get_arg(self.para, agent.predator, "reward_agent_closer")
             f_closer_d = get_arg(self.para, agent.predator, "reward_flower_closer")
-            win_d = get_arg(self.para, agent.predator, "reward_win")
             
             agent_col_rewards = []
             flower_col_rewards = []
@@ -201,11 +200,9 @@ class PredPreyEnv():
             agent_col_rewards = add_discount(agent_col_rewards, .9)
             flower_col_rewards = add_discount(flower_col_rewards, .9)
             wall_col_rewards = add_discount(wall_col_rewards, .9)
-            win_points = [0]*(len(agent.to_push)-1) + [win_d if win_lose else -win_d]
-            win_points = add_discount(win_points, .9)
             
-            new_rewards = [r + a + b + c + d for (r, a, b, c, d) in zip(
-                new_rewards, agent_col_rewards, flower_col_rewards, wall_col_rewards, win_points)]
+            new_rewards = [r + a + b + c for (r, a, b, c) in zip(
+                new_rewards, agent_col_rewards, flower_col_rewards, wall_col_rewards)]
                 
             for i in range(len(agent.to_push)): 
                 agent.to_push[i] = (agent.to_push[i][0], agent.to_push[i][1], agent.to_push[i][2], 
