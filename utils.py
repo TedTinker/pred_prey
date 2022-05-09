@@ -47,23 +47,24 @@ def get_args():
     
     return parser.parse_args()
 
-parameters = get_args()
+args = get_args()
 
-def change_para(**kwargs):
-    para = get_args()
+def change_args(**kwargs):
+    args = get_args()
     for key, value in kwargs.items():
-        setattr(para, key, value)
-    return(para)
+        setattr(args, key, value)
+    return(args)
 
-def get_arg(para, predator, arg):
+def get_arg(args, predator, arg):
     if(predator): arg = "pred_" + arg
     else:         arg = "prey_" + arg
-    return(getattr(para, arg))
+    return(getattr(args, arg))
+
 
 
 ### A few utilities
 import os
-os.environ["KMP_DUPLICATE_LIB_OK"]="TRUE" # I don't know what this is, but it's necessary. 
+os.environ["KMP_DUPLICATE_LIB_OK"]="TRUE" # Without this, pyplot crashes the kernal
 
 
 

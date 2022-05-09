@@ -15,8 +15,6 @@ class Agent:
 # How to make physicsClients.
 import pybullet as p
 
-
-
 def get_physics(GUI, w, h):
     if(GUI):
         physicsClient = p.connect(p.GUI)
@@ -35,16 +33,13 @@ import cv2
 from itertools import product
 import random
 
-from utils import parameters as para
+from utils import args
 from utils import get_arg
 
-def pythagorean(pos_1, pos_2):
-    return ((pos_1[0] - pos_2[0])**2 + (pos_1[1] - pos_2[1])**2)**.5
-
 class Arena():
-    def __init__(self, para = para, GUI = False):
-        self.para = para
-        self.arena_map = cv2.imread("arenas/" + para.arena_name + ".png")
+    def __init__(self, args = args, GUI = False):
+        self.args = args
+        self.arena_map = cv2.imread("arenas/" + args.arena_name + ".png")
         self.w, self.h, _ = self.arena_map.shape
         self.physicsClient = get_physics(GUI, self.w, self.h)
         self.open_spots = [(x,y) for x, y in product(range(self.w), range(self.h)) \
@@ -72,15 +67,15 @@ class Arena():
             pos = random.choice(self.open_spots)
         self.used_spots.append(pos)
         yaw = random.uniform(0, 2*pi)
-        spe = get_arg(self.para, predator, "min_speed")
-        energy = get_arg(self.para, predator, "energy")
+        spe = get_arg(self.args, predator, "min_speed")
+        energy = get_arg(self.args, predator, "energy")
         color = [1,0,0,1] if predator else [0,0,1,1]
         file = "ted_duck.urdf"
         
         pos = (pos[0], pos[1], .5)
         orn = p.getQuaternionFromEuler([pi/2,0,yaw])
         p_num = p.loadURDF(file,pos,orn,
-                           globalScaling = self.para.pred_size if predator else self.para.prey_size, 
+                           globalScaling = self.args.pred_size if predator else self.args.prey_size, 
                            physicsClientId = self.physicsClient)
         x, y = cos(yaw)*spe, sin(yaw)*spe
         p.resetBaseVelocity(p_num, (x,y,0),(0,0,0), physicsClientId = self.physicsClient)
@@ -102,7 +97,7 @@ class Arena():
         orn = p.getQuaternionFromEuler([roll,pitch,yaw])
         color = [random.uniform(0,1),random.uniform(0,1),random.uniform(0,1),1]
         p_num = p.loadURDF(file,pos,orn,
-                            globalScaling = self.para.flower_size,
+                            globalScaling = self.args.flower_size,
                             physicsClientId = self.physicsClient)
         p.resetBaseVelocity(p_num, (0,0,0),(0,0,0), physicsClientId = self.physicsClient)
         p.changeVisualShape(p_num, -1, rgbaColor = color, physicsClientId = self.physicsClient)

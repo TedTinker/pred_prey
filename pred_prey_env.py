@@ -4,7 +4,7 @@ import pybullet as p
 from math import degrees, pi, cos, sin
 from itertools import product
 
-from utils import get_arg, parameters as para, add_discount
+from utils import get_arg, args, add_discount
 from arena import get_physics, Arena
 
     
@@ -17,21 +17,21 @@ from torchvision.transforms.functional import resize
 
 # Made an environment! 
 class PredPreyEnv():   
-    def __init__(self, para = para, GUI = False):
-        self.para = para
+    def __init__(self, args = args, GUI = False):
+        self.args = args
         self.GUI = GUI
-        self.arena = Arena(para, self.GUI)
+        self.arena = Arena(args, self.GUI)
         self.flower_list = []
         self.agent_list = []
         self.dead_agents = []
         self.steps, self.resets = 0, 0
         
-    def change(self, para = para, GUI = False):
-        if(para != self.para or GUI != self.GUI):
+    def change(self, args = args, GUI = False):
+        if(args != self.args or GUI != self.GUI):
             self.close(True)
-            self.para = para
+            self.args = args
             self.GUI = GUI
-            self.arena = Arena(para, self.GUI)
+            self.arena = Arena(args, self.GUI)
 
     def close(self, forever = False):
         self.arena.used_spots = []
@@ -53,20 +53,20 @@ class PredPreyEnv():
         self.close()
         self.resets += 1; self.steps = 0
         self.arena.start_arena()
-        for _ in range(self.para.pred_start):
+        for _ in range(self.args.pred_start):
             self.agent_list.append(self.arena.make_agent(True))
-        for _ in range(self.para.prey_start):
+        for _ in range(self.args.prey_start):
             self.agent_list.append(self.arena.make_agent(False))
-        for _ in range(self.para.flowers):
+        for _ in range(self.args.flowers):
             self.flower_list.append(self.arena.make_flower())
         return([self.get_obs(agent) for agent in self.agent_list])
 
     def get_obs(self, agent):
-        image_size = get_arg(self.para, agent.predator, "image_size")
+        image_size = get_arg(self.args, agent.predator, "image_size")
 
         x, y = cos(agent.yaw), sin(agent.yaw)
         view_matrix = p.computeViewMatrix(
-            cameraEyePosition = [agent.pos[0], agent.pos[1], .5], 
+            cameraEyePosition = [agent.pos[0] - (x/2), agent.pos[1] - (y/2), .5], 
             cameraTargetPosition = [agent.pos[0] - x, agent.pos[1] - y, .5], 
             cameraUpVector = [0, 0, 1], physicsClientId = self.arena.physicsClient)
         proj_matrix = p.computeProjectionMatrixFOV(
@@ -135,7 +135,6 @@ class PredPreyEnv():
             pos, orn = p.getBasePositionAndOrientation(flower, physicsClientId = self.arena.physicsClient)
             p.resetBasePositionAndOrientation(flower,(pos[0], pos[1], .5), orn, physicsClientId = self.arena.physicsClient)
 
-        
     def update_pos_yaw_spe(self):
         for agent in self.agent_list:
             agent.pos, agent.yaw, agent.spe = self.arena.get_pos_yaw_spe(agent.p_num)
@@ -160,9 +159,9 @@ class PredPreyEnv():
             print("Old speed:\t{}\nNew speed:\t{}".format(old_speed, speed))
 
     def unnormalize(self, action, predator): # from (-1, 1) to (min, max)
-        max_angle_change = get_arg(self.para, predator, "max_yaw_change")
-        min_speed = get_arg(self.para, predator, "min_speed")
-        max_speed = get_arg(self.para, predator, "max_speed")
+        max_angle_change = get_arg(self.args, predator, "max_yaw_change")
+        min_speed = get_arg(self.args, predator, "min_speed")
+        max_speed = get_arg(self.args, predator, "max_speed")
         yaw = action[0].clip(-1,1).item() * max_angle_change
         spe = min_speed + ((action[1].clip(-1,1).item() + 1)/2) * (max_speed - min_speed)
         return(yaw, spe)
@@ -171,16 +170,15 @@ class PredPreyEnv():
         if(obs == None): obs = self.get_obs(agent)
         agent.action, agent.hidden = brain.act(
             obs[0], obs[1], obs[2], obs[3], agent.hidden, 
-            get_arg(self.para, agent.predator, "condition"))
-        
+            get_arg(self.args, agent.predator, "condition"))
         
     def finalize_rewards(self):
         for agent, win_lose in self.dead_agents:
-            agent_col = get_arg(self.para, agent.predator, "reward_agent_col")
-            flower_col = get_arg(self.para, agent.predator, "reward_flower_col")
-            wall_col = get_arg(self.para, agent.predator, "reward_wall_col")
-            closer_d = get_arg(self.para, agent.predator, "reward_agent_closer")
-            f_closer_d = get_arg(self.para, agent.predator, "reward_flower_closer")
+            agent_col = get_arg(self.args, agent.predator, "reward_agent_col")
+            flower_col = get_arg(self.args, agent.predator, "reward_flower_col")
+            wall_col = get_arg(self.args, agent.predator, "reward_wall_col")
+            closer_d = get_arg(self.args, agent.predator, "reward_agent_closer")
+            f_closer_d = get_arg(self.args, agent.predator, "reward_flower_closer")
             
             agent_col_rewards = []
             flower_col_rewards = []
@@ -209,10 +207,6 @@ class PredPreyEnv():
                                     agent.to_push[i][3], new_rewards[i], agent.to_push[i][5], agent.to_push[i][6], 
                                     agent.to_push[i][7], agent.to_push[i][8], agent.to_push[i][9])
             
-
-
-  
-    
     def simulation(self):
         agent_dists_before = self.arena.all_agent_dists(self.agent_list)
         flower_dists_before = self.arena.all_flower_dists(self.agent_list, self.flower_list)
@@ -231,7 +225,7 @@ class PredPreyEnv():
         for i in dead_flower_indexes:
             p.removeBody(self.flower_list[i], physicsClientId = self.arena.physicsClient)
         self.flower_list = [flower for i, flower in enumerate(self.flower_list) if i not in dead_flower_indexes]
-        while(len(self.flower_list) < self.para.flowers):
+        while(len(self.flower_list) < self.args.flowers):
             self.arena.used_spots = []
             self.flower_list.append(self.arena.make_flower())
             self.arena.used_spots = []
@@ -240,9 +234,9 @@ class PredPreyEnv():
         done = False
         if(0 == len(self.agent_list)):
             done = True
-        if(self.para.pred_start > 0 and 0 == len([agent for agent in self.agent_list if agent.predator])):
+        if(self.args.pred_start > 0 and 0 == len([agent for agent in self.agent_list if agent.predator])):
             done = True
-        if(self.para.prey_start > 0 and 0 == len([agent for agent in self.agent_list if not agent.predator])): 
+        if(self.args.prey_start > 0 and 0 == len([agent for agent in self.agent_list if not agent.predator])): 
             done = True
         
         pred_win = None
@@ -258,7 +252,7 @@ class PredPreyEnv():
                     for j in range(len(agent.to_push)):
                         brain.episodes.push(agent.to_push[j])
             pred_win = False
-            if(self.para.pred_start > 0):
+            if(self.args.pred_start > 0):
                if(0 < len([agent for agent in self.agent_list if agent.predator])):
                    pred_win = True
             else:
@@ -273,7 +267,7 @@ class PredPreyEnv():
             brain = pred_brain if agent.predator else prey_brain
             self.get_action(agent, brain, obs_list[i])
             yaw, spe = self.unnormalize(agent.action, agent.predator)
-            agent.energy -= spe * get_arg(self.para, agent.predator, "energy_per_speed")
+            agent.energy -= spe * get_arg(self.args, agent.predator, "energy_per_speed")
             self.change_velocity(agent, yaw, spe)
       
         agent_dists_after, agent_dists_closer, \
@@ -289,21 +283,21 @@ class PredPreyEnv():
             if(agent.predator):
                 for j, agent_2 in enumerate(self.agent_list):
                     if(not agent_2.predator and self.arena.agent_collisions(agent.p_num, agent_2.p_num)):
-                        agent.energy += self.para.pred_energy_from_prey
-                        agent_2.energy -= self.para.pred_energy_from_prey
+                        agent.energy += self.args.pred_energy_from_prey
+                        agent_2.energy -= self.args.pred_energy_from_prey
                         pred_prey_collisions[i] = True
                         pred_prey_collisions[j] = True
             else:
                 for j, flower in enumerate(self.flower_list):
                     if(self.arena.agent_collisions(agent.p_num, flower)):
-                        agent.energy += self.para.prey_energy_from_flower
+                        agent.energy += self.args.prey_energy_from_flower
                         prey_flower_collisions[i] = True
                         if(j not in dead_flower_indexes):
                             dead_flower_indexes.append(j)
             if(agent.energy <= 0):
                 agents_done[i] = True
                 agents_win_lose[i] = False
-            elif(agent.age >= get_arg(self.para, agent.predator, "max_age")):
+            elif(agent.age >= get_arg(self.args, agent.predator, "max_age")):
                  agents_done[i] = True
                  agents_win_lose[i] = True
         self.replace_flowers(dead_flower_indexes)

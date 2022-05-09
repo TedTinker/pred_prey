@@ -2,12 +2,6 @@ import torch
 
 from utils import get_input, plot_rewards, add_discount
 
-
-
-
-
-
-
 def episode(env, pred_brain, prey_brain, push = True):
     
     obs_list = env.reset()  
